@@ -367,6 +367,11 @@
       min-height: 66px;
     }
     .commercial-selected-manager strong { display: block; font-size: 18px; }
+    .commercial-print-header,
+    .commercial-print-footer {
+      display: none;
+    }
+
     .commercial-input-table { min-width: 700px; }
     .commercial-input-table input { min-width: 150px; text-align: right; }
     .commercial-input-table .f-log-visibility-head,
@@ -662,6 +667,184 @@
       .table-wrap { overflow: visible; border: 0; }
       table { min-width: 0; font-size: 10px; }
       th { position: static; }
+    }
+
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 12mm 9mm 17mm;
+      }
+
+      body.print-commercial-dashboard {
+        background: #fff !important;
+        color: #111 !important;
+        padding: 0 !important;
+      }
+
+      body.print-commercial-dashboard .app-header,
+      body.print-commercial-dashboard .tabs-wrap,
+      body.print-commercial-dashboard #reportPanel,
+      body.print-commercial-dashboard #launchPanel,
+      body.print-commercial-dashboard #commercialPanel > .card > .card-head,
+      body.print-commercial-dashboard .commercial-subtabs,
+      body.print-commercial-dashboard #commercialDashboardView > .filter-panel,
+      body.print-commercial-dashboard #commercialDashboardView .commercial-toolbar,
+      body.print-commercial-dashboard #commercialDashboardView .expand-btn,
+      body.print-commercial-dashboard #commercialDashboardView .no-expand,
+      body.print-commercial-dashboard #commercialDashboardView .commercial-table th:first-child,
+      body.print-commercial-dashboard #commercialDashboardView .commercial-table td:first-child {
+        display: none !important;
+      }
+
+      body.print-commercial-dashboard #commercialPanel,
+      body.print-commercial-dashboard #commercialDashboardView,
+      body.print-commercial-dashboard #commercialDashboardView .commercial-print-header,
+      body.print-commercial-dashboard #commercialDashboardView .commercial-print-footer {
+        display: block !important;
+      }
+
+      body.print-commercial-dashboard #commercialPanel {
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      body.print-commercial-dashboard #commercialPanel > .card {
+        margin: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+      }
+
+      body.print-commercial-dashboard #commercialDashboardView .card-body {
+        padding: 0 !important;
+      }
+
+      body.print-commercial-dashboard .commercial-print-header {
+        margin: 0 0 8mm;
+        padding: 0 0 5mm;
+        border-bottom: 1.5px solid #333;
+      }
+
+      body.print-commercial-dashboard .commercial-print-header h1 {
+        margin: 0 0 4mm;
+        color: #111;
+        font-size: 22pt;
+        line-height: 1.1;
+      }
+
+      body.print-commercial-dashboard .commercial-print-filters {
+        display: grid;
+        gap: 2.5mm;
+      }
+
+      body.print-commercial-dashboard .commercial-print-filter-row {
+        display: grid;
+        grid-template-columns: 24mm 1fr;
+        align-items: start;
+        gap: 3mm;
+        font-size: 9.5pt;
+        line-height: 1.3;
+      }
+
+      body.print-commercial-dashboard .commercial-print-filter-label {
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: .035em;
+      }
+
+      body.print-commercial-dashboard .commercial-print-filter-values {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5mm;
+      }
+
+      body.print-commercial-dashboard .commercial-print-filter-chip {
+        display: inline-block;
+        padding: 1.2mm 2.2mm;
+        border: 1px solid #777;
+        border-radius: 999px;
+        background: #fff;
+        color: #111;
+        font-weight: 700;
+      }
+
+      body.print-commercial-dashboard .table-wrap {
+        overflow: visible !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+      }
+
+      body.print-commercial-dashboard .commercial-table {
+        width: 100% !important;
+        min-width: 0 !important;
+        border-collapse: collapse !important;
+        table-layout: auto;
+        font-size: 8.2pt !important;
+      }
+
+      body.print-commercial-dashboard .commercial-table thead {
+        display: table-header-group;
+      }
+
+      body.print-commercial-dashboard .commercial-table tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      body.print-commercial-dashboard .commercial-table th,
+      body.print-commercial-dashboard .commercial-table td {
+        padding: 2.1mm 1.8mm !important;
+        border: 1px solid #a9adb3 !important;
+        color: #111 !important;
+        background: #fff !important;
+        vertical-align: middle;
+      }
+
+      body.print-commercial-dashboard .commercial-table th {
+        position: static !important;
+        background: #34383e !important;
+        color: #fff !important;
+        font-size: 7.8pt !important;
+        font-weight: 800;
+      }
+
+      body.print-commercial-dashboard .commercial-table .group-row td,
+      body.print-commercial-dashboard .commercial-table .single-manager-row td {
+        background: #edf0f3 !important;
+        font-weight: 800;
+      }
+
+      body.print-commercial-dashboard .commercial-table .detail-row td {
+        background: #fff !important;
+        font-weight: 400;
+      }
+
+      body.print-commercial-dashboard .commercial-table .positive {
+        color: #155b21 !important;
+        font-weight: 800;
+      }
+
+      body.print-commercial-dashboard .commercial-table .negative {
+        color: #8c1717 !important;
+        font-weight: 800;
+      }
+
+      body.print-commercial-dashboard .commercial-table .zero {
+        color: #555 !important;
+      }
+
+      body.print-commercial-dashboard .commercial-print-footer {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: -11mm;
+        padding-top: 2.5mm;
+        border-top: 1px solid #777;
+        color: #444;
+        font-size: 8pt;
+        text-align: right;
+      }
     }
   
     .storage-note {
@@ -1742,6 +1925,10 @@
         </div>
 
         <div id="commercialDashboardView" class="commercial-view">
+          <div id="commercialPrintHeader" class="commercial-print-header" aria-hidden="true">
+            <h1>Gestão Comercial</h1>
+            <div id="commercialPrintFilters" class="commercial-print-filters"></div>
+          </div>
           <div class="filter-panel no-print">
             <div class="filter-row">
               <div class="filter-label">Produto</div>
@@ -1764,7 +1951,7 @@
                 <button class="btn dark small" id="commercialClearFiltersBtn">Limpar filtros</button>
                 <button class="btn dark small" id="commercialExpandAllBtn">Expandir todas</button>
                 <button class="btn dark small" id="commercialCollapseAllBtn">Recolher todas</button>
-                <button class="btn dark small" id="commercialCsvBtn">Exportar CSV</button>
+                <button class="btn dark small" id="commercialPdfBtn" type="button">Gerar PDF</button>
               </div>
             </div>
             <div class="table-wrap">
@@ -1786,6 +1973,7 @@
               </table>
             </div>
           </div>
+          <div id="commercialPrintFooter" class="commercial-print-footer" aria-hidden="true"></div>
         </div>
 
         <div id="commercialPriorityView" class="commercial-view">
@@ -3003,6 +3191,94 @@
       renderCommercialFilterGroup('commercialPriorityManagerFilters', 'managers', [...data.managers]);
     }
 
+    function commercialSelectedFilterNames(type) {
+      const data = commercialData();
+      const selected = commercialUi.filters[type];
+      if (!selected || selected.size === 0) return ['Todos'];
+
+      const source = type === 'products'
+        ? data.products
+        : type === 'segments'
+          ? data.segments
+          : data.managers;
+
+      return source
+        .filter(item => selected.has(item.id))
+        .sort(byName)
+        .map(item => item.name);
+    }
+
+    function renderCommercialPrintHeader() {
+      const container = document.getElementById('commercialPrintFilters');
+      const footer = document.getElementById('commercialPrintFooter');
+      if (!container || !footer) return;
+
+      const groups = [
+        ['Produto', commercialSelectedFilterNames('products')],
+        ['Segmento', commercialSelectedFilterNames('segments')],
+        ['Gerente', commercialSelectedFilterNames('managers')]
+      ];
+
+      container.innerHTML = groups.map(([label, values]) => `
+        <div class="commercial-print-filter-row">
+          <div class="commercial-print-filter-label">${esc(label)}</div>
+          <div class="commercial-print-filter-values">
+            ${values.map(value => `<span class="commercial-print-filter-chip">${esc(value)}</span>`).join('')}
+          </div>
+        </div>
+      `).join('');
+
+      const timestamp = new Intl.DateTimeFormat('pt-BR', {
+        dateStyle: 'short',
+        timeStyle: 'medium'
+      }).format(new Date());
+
+      footer.textContent = `Impresso em ${timestamp}`;
+    }
+
+    function generateCommercialPdf() {
+      const originalExpanded = new Set(commercialUi.expanded);
+      const originalTitle = document.title;
+
+      currentCommercialGroups()
+        .filter(group => group.details.length > 0 && group.mode !== 'single')
+        .forEach(group => commercialUi.expanded.add(group.key));
+
+      renderCommercialDashboard();
+      renderCommercialPrintHeader();
+
+      const now = new Date();
+      const pad = value => String(value).padStart(2, '0');
+      document.title =
+        `gestao-comercial-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(now.getHours())}-${pad(now.getMinutes())}`;
+
+      document.body.classList.add('print-commercial-dashboard');
+
+      let restored = false;
+      const restore = () => {
+        if (restored) return;
+        restored = true;
+        document.body.classList.remove('print-commercial-dashboard');
+        document.title = originalTitle;
+        commercialUi.expanded = new Set(originalExpanded);
+        renderCommercialDashboard();
+        window.removeEventListener('afterprint', restore);
+      };
+
+      window.addEventListener('afterprint', restore, { once: true });
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          window.print();
+        });
+      });
+
+      setTimeout(() => {
+        if (!document.body.classList.contains('print-commercial-dashboard')) return;
+        if (!window.matchMedia('print').matches) restore();
+      }, 60000);
+    }
+
     function renderCommercialDashboard() {
       const groups = currentCommercialGroups();
       const body = document.getElementById('commercialSummaryBody');
@@ -3430,7 +3706,7 @@
       commercialUi.expanded.clear();
       renderCommercialDashboard();
     });
-    document.getElementById('commercialCsvBtn').addEventListener('click', exportCommercialCsv);
+    document.getElementById('commercialPdfBtn').addEventListener('click', generateCommercialPdf);
 
     document.getElementById('commercialPriorityDate').addEventListener('change', event => {
       const validDates = commercialPriorityReferenceDates();
@@ -3918,7 +4194,7 @@
 
       document.addEventListener('click', event => {
         if (event.target.closest(
-          '.commercial-subtab, .filter-chip, .expand-btn, .commercial-toolbar-actions button, .inline-create button, .icon-btn, .f-log-visibility-btn'
+          '.commercial-subtab, .filter-chip, .expand-btn, .commercial-toolbar-actions button, .inline-create button, .icon-btn, .f-log-visibility-btn, #commercialPdfBtn'
         )) {
           setTimeout(scheduleEnhance, 0);
         }
