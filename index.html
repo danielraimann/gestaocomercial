@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Painel Comercial" />
   <title>Painel de Gestão Comercial</title>
-  <script type="text/javascript" src="https://me.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=kJVEprBqDE_vB9B-3TgEyHxUWtRs_wnKqFfYPXK68Fg1K1Oc9juzi3TrQXkDUftw45cVo2c5hOsEF9je5TNPfdf9_LCoNBWxDchdbIJvsjor8cw46lru4Z4h-L4ZesDbY2YqlvyqwIxDx-a--QrHK_ypo_qtIbVkPRZ5wD1E3O4C6S2h9MFaQ-mQ2ohhijpC5gZ1w5LGDc8pEfGe91qim08DVyhvGWy7kB1ztOccb7UjC-7LDFEE7yh2G8390DSJpwlqwCYbyTJMFDY47iWdgUpGLodC_m5LYnGMTO9zTdo_4BCCVgWKqEO3gzKsmXfJnUpz-H-Ftfcjc5zaq7AY-w" charset="UTF-8"></script><style>
+  <style>
     :root {
       --brand: #b51f2e;
       --brand-dark: #861522;
@@ -367,8 +367,77 @@
       min-height: 66px;
     }
     .commercial-selected-manager strong { display: block; font-size: 18px; }
-    .commercial-input-table { min-width: 620px; }
+    .commercial-input-table { min-width: 700px; }
     .commercial-input-table input { min-width: 150px; text-align: right; }
+    .commercial-input-table .f-log-visibility-head,
+    .commercial-input-table .f-log-visibility-cell {
+      width: 66px;
+      min-width: 66px;
+      text-align: center;
+    }
+    .f-log-visibility-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      width: 40px;
+      height: 40px;
+      min-height: 40px;
+      padding: 0;
+      border: 1px solid #c8ced6;
+      border-radius: 9px;
+      background: #fff;
+      color: #3d4652;
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease, color .15s ease, transform .15s ease;
+    }
+    .f-log-visibility-btn:hover {
+      border-color: var(--brand);
+      color: var(--brand);
+      background: #fff6f7;
+    }
+    .f-log-visibility-btn:active { transform: scale(.96); }
+    .f-log-visibility-btn svg {
+      width: 21px;
+      height: 21px;
+      flex: 0 0 auto;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .f-log-visibility-text { display: none; }
+    .commercial-input-table tr.f-log-hidden-row {
+      background: #f3f5f7;
+      color: #737b85;
+    }
+    .commercial-input-table tr.f-log-hidden-row td {
+      background: #f3f5f7;
+    }
+    .commercial-input-table tr.f-log-hidden-row input {
+      background: #e5e9ee;
+      color: #707985;
+      border-color: #cfd5dc;
+      cursor: not-allowed;
+      opacity: .82;
+    }
+    .commercial-input-table tr.f-log-hidden-row .entry-pct {
+      color: #7b838d;
+    }
+    .commercial-input-table tr.f-log-hidden-start td {
+      border-top: 3px solid #aeb5be;
+    }
+    .commercial-input-table tr.f-log-hidden-row .f-log-visibility-btn {
+      border-color: #b8c0ca;
+      background: #e8ecf0;
+      color: #5e6874;
+    }
+    .commercial-input-table tr.f-log-hidden-row .f-log-visibility-btn:hover {
+      border-color: var(--brand);
+      background: #fff6f7;
+      color: var(--brand);
+    }
     .commercial-money-input {
       font-variant-numeric: tabular-nums;
       letter-spacing: .01em;
@@ -1297,12 +1366,54 @@
 
       /* F-LOG */
       .commercial-input-table tbody td:nth-child(1),
-      .commercial-input-table tbody td:nth-child(4) {
+      .commercial-input-table tbody td:nth-child(4),
+      .commercial-input-table tbody td:nth-child(5) {
         grid-column: 1 / -1;
       }
 
       .commercial-input-table tbody td:nth-child(1) {
         font-size: 16px;
+      }
+
+      .commercial-input-table .f-log-visibility-cell {
+        width: auto;
+        min-width: 0;
+        padding-top: 4px;
+      }
+
+      .commercial-input-table .f-log-visibility-btn {
+        width: 100%;
+        height: 48px;
+        min-height: 48px;
+        border-radius: 10px;
+        font-weight: 800;
+      }
+
+      .commercial-input-table .f-log-visibility-text {
+        display: inline;
+      }
+
+      .commercial-input-table tr.f-log-hidden-start {
+        margin-top: 10px;
+      }
+
+      .commercial-input-table tr.f-log-hidden-start::before {
+        content: "Produtos ocultos para este gerente";
+        grid-column: 1 / -1;
+        display: block;
+        margin: -2px 0 7px;
+        padding: 8px 9px;
+        border-radius: 8px;
+        background: #e5e9ee;
+        color: #59616b;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .035em;
+        text-transform: uppercase;
+      }
+
+      .commercial-input-table tr.f-log-hidden-start td {
+        border-top: 0;
       }
 
       .commercial-input-table input {
@@ -1720,7 +1831,7 @@
 
         <div id="commercialInputView" class="commercial-view">
           <div class="card-body">
-            <p class="soft-note"><strong>F-LOG:</strong> selecione um gerente e informe Objetivo e Realizado. Cada alteração é salva automaticamente neste navegador. Linhas com Objetivo e Realizado iguais a zero não entram na consolidação.</p>
+            <p class="soft-note"><strong>F-LOG:</strong> selecione um gerente e informe Objetivo e Realizado. Use o botão de olho para ocultar produtos que não são responsabilidade daquele gerente. Produtos ocultos vão para o fim da lista, ficam bloqueados para digitação e não entram nas consolidações enquanto permanecerem ocultos.</p>
             <div class="commercial-input-header">
               <div class="field">
                 <label for="commercialManagerSelect">Gerente</label>
@@ -1730,7 +1841,7 @@
             </div>
             <div class="table-wrap">
               <table class="commercial-input-table">
-                <thead><tr><th>Produto</th><th>Objetivo</th><th>Realizado</th><th>%</th></tr></thead>
+                <thead><tr><th>Produto</th><th>Objetivo</th><th>Realizado</th><th>%</th><th class="f-log-visibility-head">Exibição</th></tr></thead>
                 <tbody id="commercialInputBody"></tbody>
               </table>
             </div>
@@ -2079,7 +2190,8 @@
           managerId: String(x.managerId),
           productId: String(x.productId),
           objective: numberOrBlank(x.objective),
-          realized: numberOrBlank(x.realized)
+          realized: numberOrBlank(x.realized),
+          hidden: Boolean(x.hidden)
         })) : [];
       return { products, segments, managers, entries };
     }
@@ -2545,7 +2657,7 @@
       const data = commercialData();
       let entry = data.entries.find(x => x.managerId === managerId && x.productId === productId);
       if (!entry && create) {
-        entry = { managerId, productId, objective: '', realized: '' };
+        entry = { managerId, productId, objective: '', realized: '', hidden: false };
         data.entries.push(entry);
       }
       return entry;
@@ -2554,6 +2666,20 @@
     function commercialPct(objective, realized) {
       const obj = toNumber(objective);
       return obj > 0 ? toNumber(realized) / obj * 100 : null;
+    }
+
+    function commercialVisibilityIcon(hidden) {
+      return hidden
+        ? `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+             <path d="M3 3l18 18"></path>
+             <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"></path>
+             <path d="M9.9 4.2A10.8 10.8 0 0 1 12 4c5.5 0 9.5 5.2 9.5 8 0 1.1-.6 2.5-1.8 3.9"></path>
+             <path d="M6.6 6.6C4 8.2 2.5 10.5 2.5 12c0 2.8 4 8 9.5 8 1.5 0 2.9-.4 4.1-1"></path>
+           </svg>`
+        : `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+             <path d="M2.5 12S6.5 4 12 4s9.5 8 9.5 8-4 8-9.5 8-9.5-8-9.5-8z"></path>
+             <circle cx="12" cy="12" r="3"></circle>
+           </svg>`;
     }
 
     function normalizeCommercialLabel(value) {
@@ -2768,6 +2894,7 @@
             .filter(manager => manager.segmentId === segment.id)
             .map(manager => {
               const entry = commercialEntry(manager.id, product.id, false);
+              if (entry?.hidden) return null;
               const objective = toNumber(entry?.objective);
               const realized = toNumber(entry?.realized);
               return {
@@ -2778,6 +2905,7 @@
                 pct: commercialPct(objective, realized)
               };
             })
+            .filter(Boolean)
             .filter(row => row.objective !== 0 || row.realized !== 0)
             .sort((a, b) => {
               const ap = a.pct ?? -Infinity;
@@ -2967,26 +3095,60 @@
       if (!info || !body) return;
       if (!manager) {
         info.innerHTML = '<span class="hint">Cadastre um gerente para iniciar os lançamentos.</span>';
-        body.innerHTML = '<tr><td colspan="4" class="commercial-empty">Nenhum gerente cadastrado.</td></tr>';
+        body.innerHTML = '<tr><td colspan="5" class="commercial-empty">Nenhum gerente cadastrado.</td></tr>';
         return;
       }
       const segment = data.segments.find(x => x.id === manager.segmentId);
       info.innerHTML = `<strong>${esc(manager.name)}</strong><span class="hint">Segmento: ${esc(segment?.name || 'Não definido')}</span>`;
-      const productsList = [...data.products].filter(x => String(x.name || '').trim()).sort(byName);
+
+      const productsList = [...data.products]
+        .filter(x => String(x.name || '').trim())
+        .map(product => {
+          const entry = commercialEntry(manager.id, product.id, false);
+          return { product, entry, hidden: Boolean(entry?.hidden) };
+        })
+        .sort((a, b) => Number(a.hidden) - Number(b.hidden) || byName(a.product, b.product));
+
       if (!productsList.length) {
-        body.innerHTML = '<tr><td colspan="4" class="commercial-empty">Cadastre um produto.</td></tr>';
+        body.innerHTML = '<tr><td colspan="5" class="commercial-empty">Cadastre um produto.</td></tr>';
         return;
       }
-      body.innerHTML = productsList.map(product => {
-        const entry = commercialEntry(manager.id, product.id, false);
+
+      let hiddenSectionStarted = false;
+      body.innerHTML = productsList.map(item => {
+        const { product, entry, hidden } = item;
         const objective = entry?.objective ?? '';
         const realized = entry?.realized ?? '';
         const pct = commercialPct(objective, realized);
-        return `<tr data-manager-id="${esc(manager.id)}" data-product-id="${esc(product.id)}">
+        const hiddenStart = hidden && !hiddenSectionStarted;
+        if (hiddenStart) hiddenSectionStarted = true;
+
+        const actionLabel = hidden
+          ? `Desocultar ${product.name} para ${manager.name}`
+          : `Ocultar ${product.name} para ${manager.name}`;
+        const actionText = hidden ? 'Desocultar produto' : 'Ocultar produto';
+        const disabled = hidden ? 'disabled aria-disabled="true"' : '';
+
+        return `<tr class="${hidden ? 'f-log-hidden-row' : ''} ${hiddenStart ? 'f-log-hidden-start' : ''}"
+                    data-manager-id="${esc(manager.id)}"
+                    data-product-id="${esc(product.id)}"
+                    data-hidden="${hidden ? 'true' : 'false'}"
+                    ${hidden ? 'aria-disabled="true"' : ''}>
           <td><strong>${esc(product.name)}</strong></td>
-          <td><input data-entry-field="objective" class="commercial-money-input" type="text" inputmode="decimal" autocomplete="off" value="${objective === '' ? '' : esc(fmtCommercial(objective))}" placeholder="0,00" /></td>
-          <td><input data-entry-field="realized" class="commercial-money-input" type="text" inputmode="decimal" autocomplete="off" value="${realized === '' ? '' : esc(fmtCommercial(realized))}" placeholder="0,00" /></td>
+          <td><input data-entry-field="objective" class="commercial-money-input" type="text" inputmode="decimal" autocomplete="off" value="${objective === '' ? '' : esc(fmtCommercial(objective))}" placeholder="0,00" ${disabled} /></td>
+          <td><input data-entry-field="realized" class="commercial-money-input" type="text" inputmode="decimal" autocomplete="off" value="${realized === '' ? '' : esc(fmtCommercial(realized))}" placeholder="0,00" ${disabled} /></td>
           <td class="num pct-cell entry-pct">${pct === null ? '—' : fmtPct(pct, 0)}</td>
+          <td class="f-log-visibility-cell">
+            <button type="button"
+                    class="f-log-visibility-btn"
+                    data-toggle-product-visibility
+                    aria-label="${esc(actionLabel)}"
+                    aria-pressed="${hidden ? 'true' : 'false'}"
+                    title="${esc(actionLabel)}">
+              ${commercialVisibilityIcon(hidden)}
+              <span class="f-log-visibility-text">${esc(actionText)}</span>
+            </button>
+          </td>
         </tr>`;
       }).join('');
     }
@@ -3201,6 +3363,28 @@
     }));
 
     document.getElementById('commercialPanel').addEventListener('click', event => {
+      const visibilityButton = event.target.closest('[data-toggle-product-visibility]');
+      if (visibilityButton) {
+        const row = visibilityButton.closest('tr[data-manager-id][data-product-id]');
+        if (!row) return;
+
+        const managerId = row.dataset.managerId;
+        const productId = row.dataset.productId;
+        const entry = commercialEntry(managerId, productId, true);
+        entry.hidden = !Boolean(entry.hidden);
+
+        saveState();
+        renderCommercialInput();
+        renderCommercialDashboard();
+        renderCommercialPriorities();
+
+        const product = commercialData().products.find(item => item.id === productId);
+        toast(entry.hidden
+          ? `${product?.name || 'Produto'} ocultado para este gerente.`
+          : `${product?.name || 'Produto'} restaurado para este gerente.`);
+        return;
+      }
+
       const filter = event.target.closest('[data-filter-type]');
       if (filter) {
         const type = filter.dataset.filterType;
@@ -3267,7 +3451,7 @@
     document.getElementById('commercialInputBody').addEventListener('input', event => {
       const input = event.target.closest('[data-entry-field]');
       const row = event.target.closest('tr[data-manager-id][data-product-id]');
-      if (!input || !row) return;
+      if (!input || !row || input.disabled || row.dataset.hidden === 'true') return;
       setCommercialEntry(row.dataset.managerId, row.dataset.productId, input.dataset.entryField, input.value, row);
     });
 
@@ -3734,7 +3918,7 @@
 
       document.addEventListener('click', event => {
         if (event.target.closest(
-          '.commercial-subtab, .filter-chip, .expand-btn, .commercial-toolbar-actions button, .inline-create button, .icon-btn'
+          '.commercial-subtab, .filter-chip, .expand-btn, .commercial-toolbar-actions button, .inline-create button, .icon-btn, .f-log-visibility-btn'
         )) {
           setTimeout(scheduleEnhance, 0);
         }
