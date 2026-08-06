@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Painel Comercial" />
   <title>Painel de Gestão Comercial</title>
-  <style>
+  <script type="text/javascript" src="https://me.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=e9gCov82EBf4-J2_SIu7LxB7GXPKqZxEPbi-W1xI0a4Bcha1kJnX40CeEnxlO3POgU5uMMe5ETB_8hYEejF-nw8Dkt3NGCBqCFKZQf07t8RoUNsMP_QuBwspxaUK6IdWU3dwZqUtZRKfaHbGu7XCp3gGjGvEdHML6M6vFUnDGGQTsb3SxKoV4S-duDYC9QhhgxiWSSWNrfqzbbq-MLJq3_gWEleg_yR_OxjTB_Sh-7QNShIoupMjWmANv901Eti-IU514yfZ9L18gixToT246MfL9ASCD0RN9yLR0UyARr_EYpv_cvdils64eeMAioJl4SsMHkaveKtv5E8amanZRJp39PDZNOX_UUoVunpKfvQ" charset="UTF-8"></script><style>
     :root {
       --brand: #b51f2e;
       --brand-dark: #861522;
@@ -370,6 +370,240 @@
     .commercial-print-header,
     .commercial-print-footer {
       display: none;
+    }
+
+    .commercial-pdf-export {
+      position: fixed;
+      left: -30000px;
+      top: 0;
+      z-index: -1000;
+      width: 1800px;
+      box-sizing: border-box;
+      padding: 18px 20px 16px;
+      background: #ffffff;
+      color: #20242a;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .commercial-pdf-export,
+    .commercial-pdf-export * {
+      box-sizing: border-box;
+    }
+
+    .commercial-pdf-export-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 28px;
+      margin-bottom: 13px;
+      padding: 0 0 11px;
+      border-bottom: 4px solid var(--brand);
+    }
+
+    .commercial-pdf-export-title {
+      flex: 0 0 auto;
+      margin: 0;
+      color: var(--brand-dark);
+      font-size: 34px;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -.025em;
+    }
+
+    .commercial-pdf-export-filters {
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 7px 16px;
+      min-width: 0;
+    }
+
+    .commercial-pdf-export-filter {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .commercial-pdf-export-filter strong {
+      color: #4a515a;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .055em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .commercial-pdf-export-filter-values {
+      display: inline-flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .commercial-pdf-export-chip {
+      display: inline-block;
+      padding: 4px 8px;
+      border: 1px solid #cc8a94;
+      border-radius: 999px;
+      background: #fff1f3;
+      color: var(--brand-dark);
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+
+    .commercial-pdf-export .table-wrap {
+      overflow: visible !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+    }
+
+    .commercial-pdf-export table {
+      display: table !important;
+      width: 100% !important;
+      min-width: 0 !important;
+      border-collapse: collapse !important;
+      border-spacing: 0 !important;
+      table-layout: auto !important;
+      background: #fff !important;
+    }
+
+    .commercial-pdf-export thead {
+      display: table-header-group !important;
+      position: static !important;
+      width: auto !important;
+      height: auto !important;
+      margin: 0 !important;
+      overflow: visible !important;
+      clip: auto !important;
+      white-space: normal !important;
+    }
+
+    .commercial-pdf-export tbody {
+      display: table-row-group !important;
+    }
+
+    .commercial-pdf-export tr {
+      display: table-row !important;
+      position: static !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      background: transparent !important;
+    }
+
+    .commercial-pdf-export th,
+    .commercial-pdf-export td {
+      display: table-cell !important;
+      position: static !important;
+      width: auto !important;
+      min-width: 0 !important;
+      max-width: none !important;
+      height: auto !important;
+      margin: 0 !important;
+      border: 1px solid #b8bec6 !important;
+      vertical-align: middle !important;
+      overflow: visible !important;
+      overflow-wrap: normal !important;
+      word-break: normal !important;
+    }
+
+    .commercial-pdf-export td::before {
+      display: none !important;
+      content: none !important;
+    }
+
+    .commercial-pdf-export th {
+      background: #343a42 !important;
+      color: #ffffff !important;
+      font-weight: 900 !important;
+      text-align: center !important;
+      white-space: nowrap !important;
+    }
+
+    .commercial-pdf-export td {
+      background: #ffffff !important;
+      color: #252a31 !important;
+    }
+
+    .commercial-pdf-export .group-row td,
+    .commercial-pdf-export .single-manager-row td {
+      background: #e9eef3 !important;
+      color: #20242a !important;
+      font-weight: 900 !important;
+    }
+
+    .commercial-pdf-export .detail-row td {
+      background: #ffffff !important;
+      color: #414851 !important;
+      font-weight: 400 !important;
+    }
+
+    .commercial-pdf-export .detail-row td:first-child {
+      color: #7a828c !important;
+    }
+
+    .commercial-pdf-export .positive {
+      color: #126325 !important;
+      font-weight: 900 !important;
+    }
+
+    .commercial-pdf-export .negative {
+      color: #a1121f !important;
+      font-weight: 900 !important;
+    }
+
+    .commercial-pdf-export .zero {
+      color: #68707c !important;
+    }
+
+    .commercial-pdf-export .pct-cell {
+      font-weight: 900 !important;
+    }
+
+    .commercial-pdf-export.pdf-density-normal table {
+      font-size: 13px !important;
+    }
+
+    .commercial-pdf-export.pdf-density-normal th,
+    .commercial-pdf-export.pdf-density-normal td {
+      padding: 6px 8px !important;
+      line-height: 1.16 !important;
+    }
+
+    .commercial-pdf-export.pdf-density-compact table {
+      font-size: 11px !important;
+    }
+
+    .commercial-pdf-export.pdf-density-compact th,
+    .commercial-pdf-export.pdf-density-compact td {
+      padding: 4px 6px !important;
+      line-height: 1.12 !important;
+    }
+
+    .commercial-pdf-export.pdf-density-dense table {
+      font-size: 9px !important;
+    }
+
+    .commercial-pdf-export.pdf-density-dense th,
+    .commercial-pdf-export.pdf-density-dense td {
+      padding: 3px 4px !important;
+      line-height: 1.08 !important;
+    }
+
+    .commercial-pdf-export.pdf-density-ultra table {
+      font-size: 7.5px !important;
+    }
+
+    .commercial-pdf-export.pdf-density-ultra th,
+    .commercial-pdf-export.pdf-density-ultra td {
+      padding: 2px 3px !important;
+      line-height: 1.04 !important;
     }
 
     .commercial-input-table { min-width: 700px; }
@@ -3236,47 +3470,219 @@
       footer.textContent = `Impresso em ${timestamp}`;
     }
 
-    function generateCommercialPdf() {
-      const originalExpanded = new Set(commercialUi.expanded);
-      const originalTitle = document.title;
+    function loadCommercialPdfLibrary(src, globalCheck) {
+      if (globalCheck()) return Promise.resolve();
 
-      currentCommercialGroups()
-        .filter(group => group.details.length > 0 && group.mode !== 'single')
-        .forEach(group => commercialUi.expanded.add(group.key));
+      return new Promise((resolve, reject) => {
+        const existing = [...document.scripts].find(script => script.src === src);
+        if (existing) {
+          existing.addEventListener('load', resolve, { once: true });
+          existing.addEventListener('error', () => reject(new Error(`Falha ao carregar ${src}`)), { once: true });
+          return;
+        }
 
-      renderCommercialDashboard();
-      renderCommercialPrintHeader();
+        const script = document.createElement('script');
+        script.src = src;
+        script.async = true;
+        script.crossOrigin = 'anonymous';
+        script.onload = resolve;
+        script.onerror = () => reject(new Error(`Falha ao carregar ${src}`));
+        document.head.appendChild(script);
+      });
+    }
 
-      const now = new Date();
-      const pad = value => String(value).padStart(2, '0');
-      document.title =
-        `gestao-comercial-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(now.getHours())}-${pad(now.getMinutes())}`;
+    async function ensureCommercialPdfLibraries() {
+      await Promise.all([
+        loadCommercialPdfLibrary(
+          'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',
+          () => typeof window.html2canvas === 'function'
+        ),
+        loadCommercialPdfLibrary(
+          'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js',
+          () => Boolean(window.jspdf?.jsPDF)
+        )
+      ]);
+    }
 
-      document.body.classList.add('print-commercial-dashboard');
+    function commercialPdfFilterMarkup() {
+      const groups = [
+        ['Produto', commercialSelectedFilterNames('products')],
+        ['Segmento', commercialSelectedFilterNames('segments')],
+        ['Gerente', commercialSelectedFilterNames('managers')]
+      ];
 
-      let restored = false;
-      const restore = () => {
-        if (restored) return;
-        restored = true;
-        document.body.classList.remove('print-commercial-dashboard');
-        document.title = originalTitle;
-        commercialUi.expanded = new Set(originalExpanded);
-        renderCommercialDashboard();
-        window.removeEventListener('afterprint', restore);
-      };
+      return groups.map(([label, values]) => `
+        <div class="commercial-pdf-export-filter">
+          <strong>${esc(label)}</strong>
+          <div class="commercial-pdf-export-filter-values">
+            ${values.map(value => `<span class="commercial-pdf-export-chip">${esc(value)}</span>`).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
 
-      window.addEventListener('afterprint', restore, { once: true });
+    function buildCommercialPdfStage() {
+      const sourceTable = document.querySelector('#commercialDashboardView .commercial-table');
+      if (!sourceTable) throw new Error('Tabela da Visão Consolidada não localizada.');
 
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          window.print();
-        });
+      const table = sourceTable.cloneNode(true);
+      table.classList.remove('mobile-card-table');
+
+      table.querySelectorAll('tr').forEach(row => {
+        const firstCell = row.querySelector(':scope > th:first-child, :scope > td:first-child');
+        firstCell?.remove();
+        row.removeAttribute('style');
+        row.removeAttribute('aria-expanded');
       });
 
-      setTimeout(() => {
-        if (!document.body.classList.contains('print-commercial-dashboard')) return;
-        if (!window.matchMedia('print').matches) restore();
-      }, 60000);
+      table.querySelectorAll('[style]').forEach(element => element.removeAttribute('style'));
+      table.querySelectorAll('button, .expand-btn, .no-expand').forEach(element => element.remove());
+      table.querySelectorAll('[data-label]').forEach(element => element.removeAttribute('data-label'));
+
+      const rowCount = table.querySelectorAll('tbody tr').length;
+      const density = rowCount <= 22
+        ? 'pdf-density-normal'
+        : rowCount <= 34
+          ? 'pdf-density-compact'
+          : rowCount <= 50
+            ? 'pdf-density-dense'
+            : 'pdf-density-ultra';
+
+      const stage = document.createElement('div');
+      stage.id = 'commercialPdfExportStage';
+      stage.className = `commercial-pdf-export ${density}`;
+      stage.setAttribute('aria-hidden', 'true');
+      stage.innerHTML = `
+        <div class="commercial-pdf-export-header">
+          <h1 class="commercial-pdf-export-title">Gestão Comercial</h1>
+          <div class="commercial-pdf-export-filters">${commercialPdfFilterMarkup()}</div>
+        </div>
+        <div class="table-wrap"></div>
+      `;
+      stage.querySelector('.table-wrap').appendChild(table);
+      document.body.appendChild(stage);
+      return stage;
+    }
+
+    async function generateCommercialPdf() {
+      const button = document.getElementById('commercialPdfBtn');
+      const originalText = button?.textContent || 'Gerar PDF';
+      const originalExpanded = new Set(commercialUi.expanded);
+      let stage = null;
+
+      if (button) {
+        button.disabled = true;
+        button.textContent = 'Gerando PDF...';
+        button.setAttribute('aria-busy', 'true');
+      }
+
+      try {
+        currentCommercialGroups()
+          .filter(group => group.details.length > 0 && group.mode !== 'single')
+          .forEach(group => commercialUi.expanded.add(group.key));
+
+        renderCommercialDashboard();
+        await ensureCommercialPdfLibraries();
+
+        stage = buildCommercialPdfStage();
+
+        if (document.fonts?.ready) {
+          await document.fonts.ready;
+        }
+
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+        const captureScale = window.innerWidth <= 760 ? 2 : 2.4;
+        const canvas = await window.html2canvas(stage, {
+          backgroundColor: '#ffffff',
+          scale: captureScale,
+          useCORS: true,
+          logging: false,
+          removeContainer: false,
+          width: stage.scrollWidth,
+          height: stage.scrollHeight,
+          windowWidth: stage.scrollWidth,
+          windowHeight: stage.scrollHeight,
+          scrollX: 0,
+          scrollY: 0
+        });
+
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+          orientation: 'landscape',
+          unit: 'mm',
+          format: 'a4',
+          compress: true,
+          putOnlyUsedFonts: true
+        });
+
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+
+        const marginX = 3.5;
+        const marginTop = 3.5;
+        const footerHeight = 6;
+        const footerY = pageHeight - 2.6;
+        const availableWidth = pageWidth - marginX * 2;
+        const availableHeight = pageHeight - marginTop - footerHeight - 2;
+
+        const fitScale = Math.min(
+          availableWidth / canvas.width,
+          availableHeight / canvas.height
+        );
+
+        const imageWidth = canvas.width * fitScale;
+        const imageHeight = canvas.height * fitScale;
+        const imageX = (pageWidth - imageWidth) / 2;
+        const imageY = marginTop + Math.max(0, (availableHeight - imageHeight) / 2);
+
+        const imageData = canvas.toDataURL('image/jpeg', 0.97);
+        pdf.addImage(
+          imageData,
+          'JPEG',
+          imageX,
+          imageY,
+          imageWidth,
+          imageHeight,
+          undefined,
+          'FAST'
+        );
+
+        const timestamp = new Intl.DateTimeFormat('pt-BR', {
+          dateStyle: 'short',
+          timeStyle: 'medium'
+        }).format(new Date());
+
+        pdf.setDrawColor(181, 31, 46);
+        pdf.setLineWidth(0.35);
+        pdf.line(marginX, pageHeight - footerHeight, pageWidth - marginX, pageHeight - footerHeight);
+
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(7.5);
+        pdf.setTextColor(75, 82, 92);
+        pdf.text(`Impresso em ${timestamp}`, pageWidth - marginX, footerY, { align: 'right' });
+
+        const now = new Date();
+        const pad = value => String(value).padStart(2, '0');
+        const filename =
+          `gestao-comercial-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(now.getHours())}-${pad(now.getMinutes())}.pdf`;
+
+        pdf.save(filename);
+        toast('PDF colorido gerado em uma única página.');
+      } catch (error) {
+        console.error(error);
+        alert('Não foi possível gerar o PDF. Verifique sua conexão e tente novamente.');
+      } finally {
+        stage?.remove();
+        commercialUi.expanded = new Set(originalExpanded);
+        renderCommercialDashboard();
+
+        if (button) {
+          button.disabled = false;
+          button.textContent = originalText;
+          button.removeAttribute('aria-busy');
+        }
+      }
     }
 
     function renderCommercialDashboard() {
