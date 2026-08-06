@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Painel Comercial" />
   <title>Painel de Gestão Comercial</title>
-  <script type="text/javascript" src="https://me.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=e9gCov82EBf4-J2_SIu7LxB7GXPKqZxEPbi-W1xI0a4Bcha1kJnX40CeEnxlO3POgU5uMMe5ETB_8hYEejF-nw8Dkt3NGCBqCFKZQf07t8RoUNsMP_QuBwspxaUK6IdWU3dwZqUtZRKfaHbGu7XCp3gGjGvEdHML6M6vFUnDGGQTsb3SxKoV4S-duDYC9QhhgxiWSSWNrfqzbbq-MLJq3_gWEleg_yR_OxjTB_Sh-7QNShIoupMjWmANv901Eti-IU514yfZ9L18gixToT246MfL9ASCD0RN9yLR0UyARr_EYpv_cvdils64eeMAioJl4SsMHkaveKtv5E8amanZRJp39PDZNOX_UUoVunpKfvQ" charset="UTF-8"></script><style>
+  <style>
     :root {
       --brand: #b51f2e;
       --brand-dark: #861522;
@@ -377,9 +377,9 @@
       left: -30000px;
       top: 0;
       z-index: -1000;
-      width: 1800px;
+      width: 1240px;
       box-sizing: border-box;
-      padding: 18px 20px 16px;
+      padding: 10px 12px 9px;
       background: #ffffff;
       color: #20242a;
       font-family: Arial, Helvetica, sans-serif;
@@ -394,17 +394,17 @@
       display: flex;
       align-items: flex-end;
       justify-content: space-between;
-      gap: 28px;
-      margin-bottom: 13px;
-      padding: 0 0 11px;
-      border-bottom: 4px solid var(--brand);
+      gap: 18px;
+      margin-bottom: 8px;
+      padding: 0 0 7px;
+      border-bottom: 3px solid var(--brand);
     }
 
     .commercial-pdf-export-title {
       flex: 0 0 auto;
       margin: 0;
       color: var(--brand-dark);
-      font-size: 34px;
+      font-size: 30px;
       font-weight: 900;
       line-height: 1;
       letter-spacing: -.025em;
@@ -415,20 +415,20 @@
       align-items: flex-end;
       justify-content: flex-end;
       flex-wrap: wrap;
-      gap: 7px 16px;
+      gap: 5px 11px;
       min-width: 0;
     }
 
     .commercial-pdf-export-filter {
       display: inline-flex;
       align-items: center;
-      gap: 7px;
+      gap: 4px;
       min-width: 0;
     }
 
     .commercial-pdf-export-filter strong {
       color: #4a515a;
-      font-size: 11px;
+      font-size: 11.5px;
       font-weight: 900;
       letter-spacing: .055em;
       text-transform: uppercase;
@@ -444,7 +444,7 @@
 
     .commercial-pdf-export-chip {
       display: inline-block;
-      padding: 4px 8px;
+      padding: 3px 7px;
       border: 1px solid #cc8a94;
       border-radius: 999px;
       background: #fff1f3;
@@ -467,7 +467,7 @@
       min-width: 0 !important;
       border-collapse: collapse !important;
       border-spacing: 0 !important;
-      table-layout: auto !important;
+      table-layout: fixed !important;
       background: #fff !important;
     }
 
@@ -567,42 +567,42 @@
     }
 
     .commercial-pdf-export.pdf-density-normal table {
-      font-size: 13px !important;
+      font-size: 15px !important;
     }
 
     .commercial-pdf-export.pdf-density-normal th,
     .commercial-pdf-export.pdf-density-normal td {
-      padding: 6px 8px !important;
-      line-height: 1.16 !important;
+      padding: 6px 7px !important;
+      line-height: 1.13 !important;
     }
 
     .commercial-pdf-export.pdf-density-compact table {
-      font-size: 11px !important;
+      font-size: 13.4px !important;
     }
 
     .commercial-pdf-export.pdf-density-compact th,
     .commercial-pdf-export.pdf-density-compact td {
-      padding: 4px 6px !important;
-      line-height: 1.12 !important;
+      padding: 4.6px 6px !important;
+      line-height: 1.10 !important;
     }
 
     .commercial-pdf-export.pdf-density-dense table {
-      font-size: 9px !important;
+      font-size: 11.5px !important;
     }
 
     .commercial-pdf-export.pdf-density-dense th,
     .commercial-pdf-export.pdf-density-dense td {
-      padding: 3px 4px !important;
-      line-height: 1.08 !important;
+      padding: 3.5px 5px !important;
+      line-height: 1.07 !important;
     }
 
     .commercial-pdf-export.pdf-density-ultra table {
-      font-size: 7.5px !important;
+      font-size: 9.8px !important;
     }
 
     .commercial-pdf-export.pdf-density-ultra th,
     .commercial-pdf-export.pdf-density-ultra td {
-      padding: 2px 3px !important;
+      padding: 2.5px 4px !important;
       line-height: 1.04 !important;
     }
 
@@ -3539,12 +3539,24 @@
       table.querySelectorAll('button, .expand-btn, .no-expand').forEach(element => element.remove());
       table.querySelectorAll('[data-label]').forEach(element => element.removeAttribute('data-label'));
 
+      const oldColgroup = table.querySelector('colgroup');
+      oldColgroup?.remove();
+
+      const columnWidths = [4.5, 20, 10.5, 16.5, 13.5, 13.5, 14.5, 7];
+      const colgroup = document.createElement('colgroup');
+      columnWidths.forEach(width => {
+        const col = document.createElement('col');
+        col.style.width = `${width}%`;
+        colgroup.appendChild(col);
+      });
+      table.prepend(colgroup);
+
       const rowCount = table.querySelectorAll('tbody tr').length;
-      const density = rowCount <= 22
+      const density = rowCount <= 20
         ? 'pdf-density-normal'
-        : rowCount <= 34
+        : rowCount <= 36
           ? 'pdf-density-compact'
-          : rowCount <= 50
+          : rowCount <= 54
             ? 'pdf-density-dense'
             : 'pdf-density-ultra';
 
@@ -3562,6 +3574,43 @@
       stage.querySelector('.table-wrap').appendChild(table);
       document.body.appendChild(stage);
       return stage;
+    }
+
+    function calibrateCommercialPdfStage(stage, targetAspect) {
+      const minimumWidth = 1040;
+      const maximumWidth = 1460;
+      let low = minimumWidth;
+      let high = maximumWidth;
+      let bestWidth = 1240;
+      let bestDifference = Number.POSITIVE_INFINITY;
+
+      for (let index = 0; index < 10; index += 1) {
+        const candidate = Math.round((low + high) / 2);
+        stage.style.width = `${candidate}px`;
+
+        // Força o navegador a recalcular o layout antes da medição.
+        void stage.offsetHeight;
+
+        const width = stage.scrollWidth;
+        const height = Math.max(stage.scrollHeight, 1);
+        const aspect = width / height;
+        const difference = Math.abs(aspect - targetAspect);
+
+        if (difference < bestDifference) {
+          bestDifference = difference;
+          bestWidth = candidate;
+        }
+
+        if (aspect > targetAspect) {
+          high = candidate - 1;
+        } else {
+          low = candidate + 1;
+        }
+      }
+
+      stage.style.width = `${bestWidth}px`;
+      void stage.offsetHeight;
+      return bestWidth;
     }
 
     async function generateCommercialPdf() {
@@ -3584,6 +3633,25 @@
         renderCommercialDashboard();
         await ensureCommercialPdfLibraries();
 
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+          orientation: 'landscape',
+          unit: 'mm',
+          format: 'a4',
+          compress: true,
+          putOnlyUsedFonts: true
+        });
+
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+
+        const marginX = 3;
+        const marginTop = 3;
+        const footerHeight = 5.5;
+        const footerY = pageHeight - 2.3;
+        const availableWidth = pageWidth - marginX * 2;
+        const availableHeight = pageHeight - marginTop - footerHeight - 1.5;
+
         stage = buildCommercialPdfStage();
 
         if (document.fonts?.ready) {
@@ -3592,7 +3660,14 @@
 
         await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
-        const captureScale = window.innerWidth <= 760 ? 2 : 2.4;
+        calibrateCommercialPdfStage(
+          stage,
+          availableWidth / availableHeight
+        );
+
+        await new Promise(resolve => requestAnimationFrame(resolve));
+
+        const captureScale = window.innerWidth <= 760 ? 2.25 : 2.8;
         const canvas = await window.html2canvas(stage, {
           backgroundColor: '#ffffff',
           scale: captureScale,
@@ -3607,25 +3682,6 @@
           scrollY: 0
         });
 
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF({
-          orientation: 'landscape',
-          unit: 'mm',
-          format: 'a4',
-          compress: true,
-          putOnlyUsedFonts: true
-        });
-
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-
-        const marginX = 3.5;
-        const marginTop = 3.5;
-        const footerHeight = 6;
-        const footerY = pageHeight - 2.6;
-        const availableWidth = pageWidth - marginX * 2;
-        const availableHeight = pageHeight - marginTop - footerHeight - 2;
-
         const fitScale = Math.min(
           availableWidth / canvas.width,
           availableHeight / canvas.height
@@ -3634,12 +3690,12 @@
         const imageWidth = canvas.width * fitScale;
         const imageHeight = canvas.height * fitScale;
         const imageX = (pageWidth - imageWidth) / 2;
-        const imageY = marginTop + Math.max(0, (availableHeight - imageHeight) / 2);
+        const imageY = marginTop;
 
-        const imageData = canvas.toDataURL('image/jpeg', 0.97);
+        const imageData = canvas.toDataURL('image/png');
         pdf.addImage(
           imageData,
-          'JPEG',
+          'PNG',
           imageX,
           imageY,
           imageWidth,
