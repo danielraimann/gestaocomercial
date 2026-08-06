@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Painel de Gestão — Aplicativo Standalone</title>
+  <title>Painel de Gestão Comercial</title>
   <style>
     :root {
       --brand: #b51f2e;
@@ -460,6 +460,108 @@
       cursor: pointer;
     }
 
+    .reset-entry {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 0 0 18px;
+      padding: 14px 15px;
+      border: 1px solid #e2c4c8;
+      border-radius: 10px;
+      background: #fff8f8;
+    }
+    .reset-entry strong { display: block; margin-bottom: 3px; }
+    .reset-entry span { color: var(--muted); font-size: 13px; }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(21, 25, 31, .58);
+    }
+    .modal-dialog {
+      width: min(560px, 100%);
+      max-height: calc(100vh - 40px);
+      overflow: auto;
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 24px 70px rgba(10, 16, 24, .28);
+    }
+    .modal-head {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+    }
+    .modal-head h2 { margin: 0; font-size: 21px; }
+    .modal-close {
+      border: 0;
+      border-radius: 7px;
+      width: 34px;
+      height: 34px;
+      background: #f0f2f4;
+      color: #4f5660;
+      font-size: 20px;
+      line-height: 1;
+    }
+    .modal-body { padding: 18px 20px; }
+    .modal-body > p { margin: 0 0 14px; color: var(--muted); line-height: 1.45; }
+    .reset-options { display: grid; gap: 10px; }
+    .reset-option {
+      display: grid;
+      grid-template-columns: 22px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 11px;
+      padding: 12px 13px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: .15s ease;
+    }
+    .reset-option:hover { border-color: #c5979d; }
+    .reset-option.selected { border-color: var(--brand); background: #fff4f5; }
+    .reset-option input {
+      width: 19px;
+      height: 19px;
+      min-width: 0;
+      accent-color: var(--brand);
+    }
+    .reset-option strong { display: block; }
+    .reset-option small { display: block; margin-top: 2px; color: var(--muted); line-height: 1.35; }
+    .reset-choice {
+      min-width: 58px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      background: var(--neutral-bg);
+      color: var(--neutral-text);
+      text-align: center;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .reset-option.selected .reset-choice { background: var(--bad-bg); color: var(--bad-text); }
+    .reset-dependency-note {
+      margin: 14px 0 0 !important;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #fff2d6;
+      color: #725315 !important;
+      font-size: 12px;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 9px;
+      padding: 15px 20px 19px;
+      border-top: 1px solid var(--line);
+    }
+    .modal-actions .btn:disabled { opacity: .5; cursor: not-allowed; }
+
     @media (max-width: 760px) {
       .filter-row { grid-template-columns: 1fr; gap: 5px; }
       .filter-label { padding-top: 0; }
@@ -467,6 +569,12 @@
       .setup-grid { grid-template-columns: 1fr; }
       .setup-card.wide { grid-column: auto; }
       .inline-create.manager-create { grid-template-columns: 1fr; }
+      .reset-entry { align-items: stretch; flex-direction: column; }
+      .reset-entry .btn { width: 100%; }
+      .reset-option { grid-template-columns: 22px minmax(0, 1fr); }
+      .reset-choice { grid-column: 2; justify-self: start; }
+      .modal-actions { flex-direction: column-reverse; }
+      .modal-actions .btn { width: 100%; }
       .commercial-subtabs { overflow-x: auto; flex-wrap: nowrap; }
       .commercial-subtab { flex: 0 0 auto; }
     }
@@ -622,7 +730,7 @@
   <section id="authScreen" class="auth-screen">
     <div class="auth-card">
       <div class="auth-brand">
-        <h1>Painel de Gestão</h1>
+        <h1>Painel de Gestão Comercial</h1>
         <p>Seus dados ficam separados e protegidos pela sua conta.</p>
       </div>
       <div id="authLoading" class="auth-loading">Verificando sua sessão...</div>
@@ -655,21 +763,11 @@
   <div id="appShell" hidden>
   <header class="app-header">
     <div class="header-row">
-      <div>
-        <h1>Painel de Gestão</h1>
-        <p class="subtitle">Pontuação, entregas e gestão comercial por produto, segmento e gerente</p>
-      </div>
+      <h1>Painel de Gestão Comercial</h1>
       <div class="header-actions no-print">
-        <span class="sync-status saving" id="syncStatus">Conectando à nuvem...</span>
-        <span class="user-badge" id="userEmailBadge"></span>
-        <button class="btn" id="exportJsonBtn">Exportar dados</button>
-        <button class="btn secondary" id="importJsonBtn">Importar dados</button>
-        <button class="btn danger" id="resetBtn">Restaurar modelo</button>
         <button class="btn secondary" id="logoutBtn">Sair</button>
-        <input type="file" id="importFile" accept="application/json,.json" hidden />
       </div>
     </div>
-    <div class="storage-note">Os dados são salvos automaticamente na sua conta do Firebase e ficam disponíveis em qualquer dispositivo após o login.</div>
   </header>
 
   <nav class="tabs-wrap no-print">
@@ -846,6 +944,13 @@
         <div id="commercialConfigView" class="commercial-view">
           <div class="card-body">
             <p class="soft-note">Cadastre e edite produtos, segmentos e gerentes. Marque os produtos que devem aparecer em Prioritários. Marque um gerente como “linha mãe” para que ele ocupe a linha principal em negrito. É permitido um gerente mãe por segmento.</p>
+            <div class="reset-entry no-print">
+              <div>
+                <strong>Restaurar dados</strong>
+                <span>Escolha quais cadastros ou valores devem ser excluídos. Os demais serão mantidos.</span>
+              </div>
+              <button class="btn danger" id="resetBtn" type="button">Configurar restauração</button>
+            </div>
             <div class="setup-grid">
               <div class="setup-card">
                 <div class="setup-card-head"><h3>Produtos</h3></div>
@@ -969,6 +1074,48 @@
       </div>
     </section>
   </main>
+
+  <div id="resetModal" class="modal-backdrop" hidden>
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="resetModalTitle">
+      <div class="modal-head">
+        <div>
+          <h2 id="resetModalTitle">Restaurar dados</h2>
+          <p class="hint">Defina o que será mantido e o que será excluído.</p>
+        </div>
+        <button class="modal-close" id="resetCloseBtn" type="button" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <p>Marque os itens que deseja <strong>excluir</strong>. Itens desmarcados serão mantidos.</p>
+        <div class="reset-options">
+          <label class="reset-option">
+            <input id="resetProducts" data-reset-field="products" type="checkbox" />
+            <span><strong>Produtos</strong><small>Exclui os produtos cadastrados e seus lançamentos vinculados.</small></span>
+            <span class="reset-choice">Manter</span>
+          </label>
+          <label class="reset-option">
+            <input id="resetManagers" data-reset-field="managers" type="checkbox" />
+            <span><strong>Gerentes</strong><small>Exclui os gerentes cadastrados e seus lançamentos vinculados.</small></span>
+            <span class="reset-choice">Manter</span>
+          </label>
+          <label class="reset-option">
+            <input id="resetObjectives" data-reset-field="objectives" type="checkbox" />
+            <span><strong>Objetivos</strong><small>Zera apenas os valores de objetivo informados no F-LOG.</small></span>
+            <span class="reset-choice">Manter</span>
+          </label>
+          <label class="reset-option">
+            <input id="resetRealized" data-reset-field="realized" type="checkbox" />
+            <span><strong>Realizado</strong><small>Zera apenas os valores realizados informados no F-LOG.</small></span>
+            <span class="reset-choice">Manter</span>
+          </label>
+        </div>
+        <p id="resetDependencyNote" class="reset-dependency-note" hidden>Ao excluir produtos ou gerentes, os objetivos e realizados vinculados também precisam ser excluídos.</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn dark" id="resetCancelBtn" type="button">Cancelar</button>
+        <button class="btn danger" id="resetConfirmBtn" type="button" disabled>Excluir dados selecionados</button>
+      </div>
+    </div>
+  </div>
 
   <div id="toast" class="toast"></div>
   </div>
@@ -1352,7 +1499,6 @@
     function showApp(user) {
       document.getElementById('authScreen').hidden = true;
       document.getElementById('appShell').hidden = false;
-      document.getElementById('userEmailBadge').textContent = user.email || 'Usuário conectado';
     }
 
     async function handleSignedInUser(user) {
@@ -2452,20 +2598,90 @@
       const a = document.createElement('a'); a.href = url; a.download = name; a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
-    document.getElementById('exportJsonBtn').addEventListener('click', () => download('painel-gestao-dados.json', JSON.stringify(state, null, 2), 'application/json;charset=utf-8'));
-    document.getElementById('importJsonBtn').addEventListener('click', () => document.getElementById('importFile').click());
-    document.getElementById('importFile').addEventListener('change', async e => {
-      const file = e.target.files[0]; if (!file) return;
-      try {
-        const parsed = JSON.parse(await file.text());
-        if (!parsed.scores || !parsed.references || !parsed.managers) throw new Error('Formato inválido');
-        state = normalizeState(parsed); saveState(); renderAll(); toast('Dados importados.');
-      } catch { alert('O arquivo não contém dados válidos deste aplicativo.'); }
-      e.target.value = '';
+    const resetModal = document.getElementById('resetModal');
+    const resetInputs = [...document.querySelectorAll('[data-reset-field]')];
+    const resetProductsInput = document.getElementById('resetProducts');
+    const resetManagersInput = document.getElementById('resetManagers');
+    const resetObjectivesInput = document.getElementById('resetObjectives');
+    const resetRealizedInput = document.getElementById('resetRealized');
+    const resetConfirmBtn = document.getElementById('resetConfirmBtn');
+    const resetDependencyNote = document.getElementById('resetDependencyNote');
+
+    function updateResetModalState() {
+      const structuralReset = resetProductsInput.checked || resetManagersInput.checked;
+      if (structuralReset) {
+        resetObjectivesInput.checked = true;
+        resetRealizedInput.checked = true;
+      }
+      resetObjectivesInput.disabled = structuralReset;
+      resetRealizedInput.disabled = structuralReset;
+      resetDependencyNote.hidden = !structuralReset;
+
+      resetInputs.forEach(input => {
+        const option = input.closest('.reset-option');
+        option.classList.toggle('selected', input.checked);
+        option.querySelector('.reset-choice').textContent = input.checked ? 'Excluir' : 'Manter';
+      });
+      resetConfirmBtn.disabled = !resetInputs.some(input => input.checked);
+    }
+
+    function openResetModal() {
+      resetInputs.forEach(input => {
+        input.checked = false;
+        input.disabled = false;
+      });
+      updateResetModalState();
+      resetModal.hidden = false;
+      resetProductsInput.focus();
+    }
+
+    function closeResetModal() {
+      resetModal.hidden = true;
+    }
+
+    document.getElementById('resetBtn').addEventListener('click', openResetModal);
+    resetInputs.forEach(input => input.addEventListener('change', updateResetModalState));
+    document.getElementById('resetCancelBtn').addEventListener('click', closeResetModal);
+    document.getElementById('resetCloseBtn').addEventListener('click', closeResetModal);
+    resetModal.addEventListener('click', event => {
+      if (event.target === resetModal) closeResetModal();
     });
-    document.getElementById('resetBtn').addEventListener('click', () => {
-      if (!confirm('Restaurar o modelo inicial? Os dados atuais serão substituídos.')) return;
-      state = defaultState(); saveState(); renderAll(); toast('Modelo restaurado.');
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !resetModal.hidden) closeResetModal();
+    });
+
+    resetConfirmBtn.addEventListener('click', () => {
+      const deleteProducts = resetProductsInput.checked;
+      const deleteManagers = resetManagersInput.checked;
+      const deleteObjectives = resetObjectivesInput.checked;
+      const deleteRealized = resetRealizedInput.checked;
+      if (!deleteProducts && !deleteManagers && !deleteObjectives && !deleteRealized) return;
+
+      const data = commercialData();
+      if (deleteProducts) data.products = [];
+      if (deleteManagers) {
+        data.managers = [];
+        state.managers = [];
+        state.scores = [];
+        commercialUi.selectedManagerId = '';
+      }
+
+      if (deleteProducts || deleteManagers) {
+        data.entries = [];
+      } else {
+        data.entries = data.entries.map(entry => ({
+          ...entry,
+          objective: deleteObjectives ? '' : entry.objective,
+          realized: deleteRealized ? '' : entry.realized
+        }));
+      }
+
+      Object.values(commercialUi.filters).forEach(set => set.clear());
+      commercialUi.expanded.clear();
+      closeResetModal();
+      saveState();
+      renderAll();
+      toast('Dados selecionados foram excluídos.');
     });
 
     document.getElementById('csvBtn').addEventListener('click', () => {
