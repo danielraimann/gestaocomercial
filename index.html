@@ -1,0 +1,2564 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel de Gestão — Aplicativo Standalone</title>
+  <style>
+    :root {
+      --brand: #b51f2e;
+      --brand-dark: #861522;
+      --ink: #20242a;
+      --muted: #68707c;
+      --line: #d9dde3;
+      --surface: #ffffff;
+      --surface-2: #f4f6f8;
+      --input: #fff4c9;
+      --purple: #7a43b6;
+      --red: #de3c35;
+      --green: #4e9a45;
+      --blue: #3158a6;
+      --yellow: #e3aa20;
+      --graybar: #3b4047;
+      --ok-bg: #e7f4e5;
+      --ok-text: #285d28;
+      --bad-bg: #fde8e5;
+      --bad-text: #952a21;
+      --neutral-bg: #edf0f3;
+      --neutral-text: #59616b;
+      --shadow: 0 8px 28px rgba(25, 31, 40, .08);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--surface-2);
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+
+    .app-header {
+      background: linear-gradient(135deg, var(--brand-dark), var(--brand));
+      color: #fff;
+      padding: 22px clamp(16px, 4vw, 44px);
+      box-shadow: var(--shadow);
+    }
+    .header-row {
+      max-width: 1500px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+    h1 { margin: 0; font-size: clamp(22px, 3vw, 34px); }
+    .subtitle { margin: 5px 0 0; opacity: .88; font-size: 14px; }
+
+    .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: 9px 13px;
+      font-weight: 700;
+      background: #fff;
+      color: var(--brand-dark);
+    }
+    .btn:hover { filter: brightness(.97); }
+    .btn.secondary { background: transparent; color: #fff; border-color: rgba(255,255,255,.65); }
+    .btn.dark { background: #333941; color: #fff; }
+    .btn.danger { background: #fff; color: #9f1c25; }
+    .btn.small { padding: 6px 9px; font-size: 12px; }
+
+    .tabs-wrap {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+    }
+    .tabs {
+      max-width: 1500px;
+      margin: 0 auto;
+      padding: 0 clamp(10px, 3vw, 34px);
+      display: flex;
+      overflow-x: auto;
+    }
+    .tab-btn {
+      flex: 0 0 auto;
+      border: 0;
+      background: transparent;
+      padding: 15px 18px;
+      color: var(--muted);
+      font-weight: 700;
+      border-bottom: 3px solid transparent;
+    }
+    .tab-btn.active { color: var(--brand); border-bottom-color: var(--brand); }
+
+    main { max-width: 1500px; margin: 24px auto 60px; padding: 0 clamp(12px, 3vw, 34px); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+      flex-wrap: wrap;
+    }
+    .card-head h2, .card-head h3 { margin: 0; }
+    .card-body { padding: 18px; }
+    .hint { color: var(--muted); font-size: 13px; margin: 4px 0 0; }
+
+    .field-row { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; }
+    .field { display: grid; gap: 6px; min-width: 210px; }
+    .field label { font-size: 12px; font-weight: 700; color: var(--muted); }
+    input[type="text"], input[type="number"], input[type="date"], select {
+      width: 100%;
+      border: 1px solid #bec5ce;
+      border-radius: 7px;
+      padding: 9px 10px;
+      background: var(--input);
+      color: var(--ink);
+    }
+    input:focus, select:focus { outline: 2px solid rgba(181,31,46,.2); border-color: var(--brand); }
+
+    .table-wrap { overflow: auto; border: 1px solid var(--line); border-radius: 9px; }
+    table { width: 100%; border-collapse: collapse; min-width: 880px; }
+    th, td { border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); padding: 8px; vertical-align: middle; }
+    th:last-child, td:last-child { border-right: 0; }
+    tbody tr:last-child td { border-bottom: 0; }
+    th {
+      position: sticky;
+      top: 0;
+      background: #373b41;
+      color: #fff;
+      font-size: 12px;
+      text-align: center;
+      z-index: 2;
+      white-space: nowrap;
+    }
+    td input { min-width: 95px; }
+    td.name-cell input { min-width: 220px; }
+    .action-cell { width: 52px; text-align: center; }
+    .icon-btn {
+      border: 0;
+      background: #f0f2f4;
+      color: #8c222a;
+      border-radius: 6px;
+      width: 30px;
+      height: 30px;
+      font-weight: 900;
+    }
+
+    .charts-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .chart-card { border: 1px solid var(--line); border-radius: 10px; padding: 14px; min-width: 0; }
+    .chart-title { text-align: center; font-weight: 800; margin: 0 0 14px; font-size: 18px; }
+    .axis-row { display: grid; grid-template-columns: minmax(145px, 34%) 1fr 54px; gap: 8px; align-items: center; margin-bottom: 7px; }
+    .axis-track { display: flex; justify-content: space-between; color: #6b737d; font-size: 10px; border-bottom: 1px solid #9ea5ae; padding-bottom: 3px; }
+    .bar-row { display: grid; grid-template-columns: minmax(145px, 34%) 1fr 54px; gap: 8px; align-items: center; margin: 8px 0; }
+    .bar-label { font-size: 12px; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .bar-track { height: 22px; background: repeating-linear-gradient(to right, #f1f3f5 0, #f1f3f5 calc(20% - 1px), #dce0e5 calc(20% - 1px), #dce0e5 20%); position: relative; }
+    .bar { height: 100%; min-width: 2px; border-radius: 0 3px 3px 0; transition: width .25s ease; }
+    .bar-value { font-size: 12px; font-weight: 700; }
+    .empty-state { padding: 34px 12px; text-align: center; color: var(--muted); }
+    .legend { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; padding-top: 15px; }
+    .legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
+    .dot { width: 13px; height: 13px; border-radius: 50%; }
+
+    .reference-strip { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 10px; margin-bottom: 15px; }
+    .ref-card { border: 1px solid var(--line); background: #f7f8fa; border-radius: 9px; padding: 12px; }
+    .ref-card strong { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+    .ref-value { font-size: 24px; font-weight: 800; }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(160px, 1fr)); gap: 12px; margin-bottom: 18px; }
+    .kpi { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 14px; box-shadow: 0 3px 12px rgba(25,31,40,.05); }
+    .kpi-label { color: var(--muted); font-size: 12px; font-weight: 700; }
+    .kpi-value { font-size: 27px; font-weight: 800; margin-top: 5px; }
+
+    .status { display: inline-block; padding: 5px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; white-space: nowrap; }
+    .status.ok { background: var(--ok-bg); color: var(--ok-text); }
+    .status.bad { background: var(--bad-bg); color: var(--bad-text); }
+    .status.neutral { background: var(--neutral-bg); color: var(--neutral-text); }
+    .num { text-align: right; white-space: nowrap; }
+    .report-table tbody tr.manager-start td { border-top: 3px solid #aeb4bc; }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 50;
+      background: #2e3339;
+      color: #fff;
+      border-radius: 8px;
+      padding: 11px 14px;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      transform: translateY(12px);
+      pointer-events: none;
+      transition: .2s ease;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 980px) {
+      .charts-grid, .reference-strip, .kpi-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 640px) {
+      .charts-grid, .reference-strip, .kpi-grid { grid-template-columns: 1fr; }
+      .bar-row, .axis-row { grid-template-columns: 120px 1fr 48px; }
+      .bar-label { font-size: 11px; }
+      .card-body { padding: 12px; }
+    }
+
+
+    .sync-status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 7px 10px;
+      border-radius: 8px;
+      background: rgba(255,255,255,.14);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid rgba(255,255,255,.28);
+    }
+    .sync-status.saving { background: rgba(255, 193, 7, .20); }
+    .sync-status.error { background: rgba(122, 0, 16, .45); }
+    .sync-status.ok { background: rgba(36, 122, 72, .35); }
+
+
+
+    /* Gestão Comercial */
+    .commercial-subtabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+      background: #fafbfc;
+    }
+    .commercial-subtab {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--muted);
+      padding: 8px 14px;
+      font-weight: 700;
+    }
+    .commercial-subtab.active {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: #fff;
+    }
+    .commercial-view { display: none; }
+    .commercial-view.active { display: block; }
+    .filter-panel {
+      display: grid;
+      gap: 14px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+    .filter-row {
+      display: grid;
+      grid-template-columns: 105px minmax(0, 1fr);
+      align-items: start;
+      gap: 12px;
+    }
+    .filter-label {
+      padding-top: 7px;
+      font-weight: 800;
+      color: #3d434c;
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: .04em;
+    }
+    .filter-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+    .filter-chip {
+      border: 1px solid #cdd2d9;
+      border-radius: 999px;
+      background: #fff;
+      color: #4d5560;
+      padding: 7px 11px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .filter-chip:hover { border-color: var(--brand); color: var(--brand); }
+    .filter-chip.selected {
+      background: #f9e8eb;
+      border-color: var(--brand);
+      color: var(--brand-dark);
+      box-shadow: inset 0 0 0 1px var(--brand);
+    }
+    .commercial-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .commercial-toolbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .commercial-summary {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .commercial-table { min-width: 860px; }
+    .commercial-table th { text-align: center; }
+    .commercial-table .group-row {
+      font-weight: 800;
+      background: #f6f7f9;
+      cursor: pointer;
+    }
+    .commercial-table .group-row:hover { background: #edf0f4; }
+    .commercial-table .detail-row { background: #fff; }
+    .commercial-table .detail-row td:first-child { color: var(--muted); }
+    .commercial-table .detail-marker {
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .commercial-table .expand-btn {
+      width: 28px;
+      height: 28px;
+      border: 1px solid #cfd4da;
+      border-radius: 7px;
+      background: #fff;
+      color: #333941;
+      font-weight: 900;
+      line-height: 1;
+    }
+    .commercial-table .pct-cell { font-weight: 900; }
+    .commercial-table .positive { color: #27612d; font-weight: 800; }
+    .commercial-table .negative { color: #9b2525; font-weight: 800; }
+    .commercial-table .zero { color: var(--muted); }
+    .commercial-input-header {
+      display: grid;
+      grid-template-columns: minmax(240px, 420px) 1fr;
+      gap: 16px;
+      align-items: end;
+      margin-bottom: 16px;
+    }
+    .commercial-selected-manager {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px 14px;
+      background: #fafbfc;
+      min-height: 66px;
+    }
+    .commercial-selected-manager strong { display: block; font-size: 18px; }
+    .commercial-input-table { min-width: 620px; }
+    .commercial-input-table input { min-width: 150px; text-align: right; }
+    .commercial-money-input {
+      font-variant-numeric: tabular-nums;
+      letter-spacing: .01em;
+    }
+    .setup-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+    .setup-card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .setup-card.wide { grid-column: 1 / -1; }
+    .setup-card-head {
+      padding: 13px 15px;
+      background: #f7f8fa;
+      border-bottom: 1px solid var(--line);
+    }
+    .setup-card-head h3 { margin: 0; }
+    .setup-card-body { padding: 14px; }
+    .inline-create {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .inline-create.manager-create {
+      grid-template-columns: minmax(180px, 1.4fr) minmax(150px, 1fr) auto;
+    }
+    .config-table { min-width: 420px; }
+    .config-table input, .config-table select { min-width: 140px; }
+    .parent-check-wrap { display: inline-flex; align-items: center; justify-content: center; gap: 7px; font-weight: 800; color: var(--text); white-space: nowrap; }
+    .parent-check-wrap input[type="checkbox"] { min-width: 0; width: 19px; height: 19px; accent-color: var(--brand); cursor: pointer; }
+    .commercial-table .single-manager-row { background: #f4f6f8; font-weight: 800; }
+    .commercial-table .single-manager-row:hover { background: #edf0f4; }
+    .score-manager-name {
+      display: block;
+      padding: 10px 12px;
+      font-weight: 700;
+      color: var(--text);
+      background: #f7f8fa;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+    }
+    .commercial-table .no-expand { display: inline-block; width: 28px; }
+    .commercial-empty {
+      padding: 34px 18px;
+      text-align: center;
+      color: var(--muted);
+    }
+    .soft-note {
+      margin: 0 0 14px;
+      padding: 11px 13px;
+      border-radius: 9px;
+      background: #f3f5f7;
+      color: #535b65;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .commercial-priority-header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .commercial-priority-header h3 { margin: 0 0 4px; }
+    .priority-date-field { min-width: 230px; }
+    .commercial-priority-table { min-width: 1180px; }
+    .commercial-priority-table .delivery-segment {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .priority-product-check {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .priority-product-check input[type="checkbox"] {
+      min-width: 0;
+      width: 19px;
+      height: 19px;
+      accent-color: var(--brand);
+      cursor: pointer;
+    }
+
+    @media (max-width: 760px) {
+      .filter-row { grid-template-columns: 1fr; gap: 5px; }
+      .filter-label { padding-top: 0; }
+      .commercial-input-header { grid-template-columns: 1fr; }
+      .setup-grid { grid-template-columns: 1fr; }
+      .setup-card.wide { grid-column: auto; }
+      .inline-create.manager-create { grid-template-columns: 1fr; }
+      .commercial-subtabs { overflow-x: auto; flex-wrap: nowrap; }
+      .commercial-subtab { flex: 0 0 auto; }
+    }
+
+    @media print {
+      .app-header, .tabs-wrap, .no-print, #commercialPanel, #launchPanel { display: none !important; }
+      body { background: #fff; }
+      main { max-width: none; margin: 0; padding: 0; }
+      #reportPanel { display: block !important; }
+      .card { box-shadow: none; border: 0; }
+      .table-wrap { overflow: visible; border: 0; }
+      table { min-width: 0; font-size: 10px; }
+      th { position: static; }
+    }
+  
+    .storage-note {
+      max-width: 1500px;
+      margin: 0 auto;
+      padding: 7px clamp(16px, 4vw, 44px) 0;
+      font-size: 11px;
+      opacity: .82;
+    }
+    @media (max-width: 640px) {
+      .header-actions { width: 100%; }
+      .header-actions .btn { flex: 1 1 auto; }
+      .sync-status { width: 100%; text-align: center; }
+    }
+
+
+    [hidden] { display: none !important; }
+    .auth-screen {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at 15% 15%, rgba(181, 28, 49, .12), transparent 34%),
+        linear-gradient(135deg, #f7f8fa, #eef1f5);
+    }
+    .auth-card {
+      width: min(460px, 100%);
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: 0 18px 50px rgba(31, 41, 55, .12);
+      overflow: hidden;
+    }
+    .auth-brand {
+      padding: 26px 28px 20px;
+      background: linear-gradient(135deg, #99162a, #bd1f37);
+      color: #fff;
+    }
+    .auth-brand h1 { margin: 0 0 6px; font-size: 28px; }
+    .auth-brand p { margin: 0; opacity: .9; }
+    .auth-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 18px 22px 0;
+    }
+    .auth-tab {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 10px 14px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .auth-tab.active {
+      background: var(--red);
+      border-color: var(--red);
+      color: #fff;
+    }
+    .auth-form { padding: 20px 22px 24px; }
+    .auth-field { margin-bottom: 14px; }
+    .auth-field label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--muted);
+    }
+    .auth-field input {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #cdd3dc;
+      border-radius: 10px;
+      padding: 12px 13px;
+      font: inherit;
+      background: #fff;
+    }
+    .auth-field input:focus {
+      outline: 3px solid rgba(181, 28, 49, .14);
+      border-color: var(--red);
+    }
+    .auth-submit {
+      width: 100%;
+      border: 0;
+      border-radius: 10px;
+      padding: 12px 16px;
+      background: var(--red);
+      color: #fff;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .auth-submit:disabled { opacity: .65; cursor: wait; }
+    .auth-secondary {
+      display: block;
+      width: 100%;
+      margin-top: 12px;
+      border: 0;
+      background: transparent;
+      color: var(--red);
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .auth-message {
+      min-height: 20px;
+      margin: 12px 0 0;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+    .auth-message.error { color: #a31326; }
+    .auth-message.ok { color: #176c3a; }
+    .auth-loading {
+      text-align: center;
+      padding: 22px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .user-badge {
+      max-width: 260px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding: 8px 10px;
+      border: 1px solid rgba(255,255,255,.45);
+      border-radius: 8px;
+      font-size: 12px;
+      color: #fff;
+    }
+    @media (max-width: 720px) {
+      .user-badge { width: 100%; max-width: none; text-align: center; }
+    }
+
+  </style>
+</head>
+<body>
+  <section id="authScreen" class="auth-screen">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <h1>Painel de Gestão</h1>
+        <p>Seus dados ficam separados e protegidos pela sua conta.</p>
+      </div>
+      <div id="authLoading" class="auth-loading">Verificando sua sessão...</div>
+      <div id="authContent" hidden>
+        <div class="auth-tabs">
+          <button type="button" class="auth-tab active" id="loginTabBtn">Entrar</button>
+          <button type="button" class="auth-tab" id="registerTabBtn">Criar conta</button>
+        </div>
+        <form id="authForm" class="auth-form" novalidate>
+          <div class="auth-field">
+            <label for="authEmail">E-mail</label>
+            <input id="authEmail" type="email" autocomplete="email" required />
+          </div>
+          <div class="auth-field">
+            <label for="authPassword">Senha</label>
+            <input id="authPassword" type="password" autocomplete="current-password" minlength="6" required />
+          </div>
+          <div class="auth-field" id="confirmPasswordField" hidden>
+            <label for="authPasswordConfirm">Confirmar senha</label>
+            <input id="authPasswordConfirm" type="password" autocomplete="new-password" minlength="6" />
+          </div>
+          <button id="authSubmitBtn" class="auth-submit" type="submit">Entrar</button>
+          <button id="forgotPasswordBtn" class="auth-secondary" type="button">Esqueci minha senha</button>
+          <p id="authMessage" class="auth-message" aria-live="polite"></p>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <div id="appShell" hidden>
+  <header class="app-header">
+    <div class="header-row">
+      <div>
+        <h1>Painel de Gestão</h1>
+        <p class="subtitle">Pontuação, entregas e gestão comercial por produto, segmento e gerente</p>
+      </div>
+      <div class="header-actions no-print">
+        <span class="sync-status saving" id="syncStatus">Conectando à nuvem...</span>
+        <span class="user-badge" id="userEmailBadge"></span>
+        <button class="btn" id="exportJsonBtn">Exportar dados</button>
+        <button class="btn secondary" id="importJsonBtn">Importar dados</button>
+        <button class="btn danger" id="resetBtn">Restaurar modelo</button>
+        <button class="btn secondary" id="logoutBtn">Sair</button>
+        <input type="file" id="importFile" accept="application/json,.json" hidden />
+      </div>
+    </div>
+    <div class="storage-note">Os dados são salvos automaticamente na sua conta do Firebase e ficam disponíveis em qualquer dispositivo após o login.</div>
+  </header>
+
+  <nav class="tabs-wrap no-print">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="commercialPanel">Gestão Comercial</button>
+    </div>
+  </nav>
+
+  <main>
+    <section id="commercialPanel" class="tab-panel active">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>Gestão Comercial</h2>
+            <p class="hint">Visão por produto, segmento e gerente. Produtos marcados como prioritários são comparados com a referência vigente. O gerente marcado como “linha mãe” aparece em negrito; ao selecionar somente um gerente, aparecem apenas os dados dele.</p>
+          </div>
+          <span class="commercial-summary" id="commercialSaveHint">Salvamento automático ativo</span>
+        </div>
+
+        <div class="commercial-subtabs no-print">
+          <button class="commercial-subtab active" data-commercial-view="commercialScoreView">Pontuação POBJ Produção</button>
+          <button class="commercial-subtab" data-commercial-view="commercialDashboardView">Visão consolidada</button>
+          <button class="commercial-subtab" data-commercial-view="commercialPriorityView">Prioritários</button>
+          <button class="commercial-subtab" data-commercial-view="commercialInputView">F-LOG</button>
+          <button class="commercial-subtab" data-commercial-view="commercialConfigView">Cadastros</button>
+          <button class="commercial-subtab" data-commercial-view="commercialReferencesView">Referências</button>
+        </div>
+
+        <div id="commercialScoreView" class="commercial-view active">
+          <div class="card-body">
+            <div class="commercial-priority-header">
+              <div>
+                <h3>Pontuação POBJ Produção</h3>
+                <p class="hint">Os gerentes são os mesmos cadastrados em Cadastros. Os gráficos são ordenados automaticamente do maior para o menor.</p>
+              </div>
+            </div>
+            <div class="field-row" style="margin-bottom:14px">
+              <div class="field">
+                <label for="groupTitle">Título do grupo</label>
+                <input id="groupTitle" type="text" />
+              </div>
+            </div>
+            <div class="table-wrap no-print">
+              <table id="scoreTable">
+                <thead><tr><th>Gerente</th><th>Pontuação atual</th><th>Pontuação informada</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card-body" style="border-top:1px solid var(--border)">
+            <h3 style="margin:0 0 14px">Gráficos</h3>
+            <div class="charts-grid">
+              <div class="chart-card"><h3 class="chart-title">Pontuação</h3><div id="currentChart"></div></div>
+              <div class="chart-card"><h3 class="chart-title">Informado</h3><div id="informedChart"></div></div>
+            </div>
+            <div class="legend">
+              <span class="legend-item"><span class="dot" style="background:var(--purple)"></span>≤ 60%</span>
+              <span class="legend-item"><span class="dot" style="background:var(--red)"></span>&gt; 60% a ≤ 80%</span>
+              <span class="legend-item"><span class="dot" style="background:var(--green)"></span>&gt; 80% a ≤ 100%</span>
+              <span class="legend-item"><span class="dot" style="background:var(--blue)"></span>&gt; 100% a ≤ 110%</span>
+              <span class="legend-item"><span class="dot" style="background:var(--yellow)"></span>&gt; 110%</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="commercialDashboardView" class="commercial-view">
+          <div class="filter-panel no-print">
+            <div class="filter-row">
+              <div class="filter-label">Produto</div>
+              <div class="filter-chips" id="commercialProductFilters"></div>
+            </div>
+            <div class="filter-row">
+              <div class="filter-label">Segmento</div>
+              <div class="filter-chips" id="commercialSegmentFilters"></div>
+            </div>
+            <div class="filter-row">
+              <div class="filter-label">Gerente</div>
+              <div class="filter-chips" id="commercialManagerFilters"></div>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div class="commercial-toolbar no-print">
+              <div class="commercial-summary" id="commercialFilterSummary"></div>
+              <div class="commercial-toolbar-actions">
+                <button class="btn dark small" id="commercialClearFiltersBtn">Limpar filtros</button>
+                <button class="btn dark small" id="commercialExpandAllBtn">Expandir todas</button>
+                <button class="btn dark small" id="commercialCollapseAllBtn">Recolher todas</button>
+                <button class="btn dark small" id="commercialCsvBtn">Exportar CSV</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="commercial-table">
+                <thead>
+                  <tr>
+                    <th style="width:48px"></th>
+                    <th style="width:55px">#</th>
+                    <th>Produto</th>
+                    <th>Segmento</th>
+                    <th>Gerente</th>
+                    <th>Objetivo</th>
+                    <th>Realizado</th>
+                    <th>Déficit</th>
+                    <th>%</th>
+                  </tr>
+                </thead>
+                <tbody id="commercialSummaryBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div id="commercialPriorityView" class="commercial-view">
+          <div class="filter-panel no-print">
+            <div class="filter-row">
+              <div class="filter-label">Produto</div>
+              <div class="filter-chips" id="commercialPriorityProductFilters"></div>
+            </div>
+            <div class="filter-row">
+              <div class="filter-label">Segmento</div>
+              <div class="filter-chips" id="commercialPrioritySegmentFilters"></div>
+            </div>
+            <div class="filter-row">
+              <div class="filter-label">Gerente</div>
+              <div class="filter-chips" id="commercialPriorityManagerFilters"></div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="commercial-priority-header">
+              <div>
+                <h3>Entregas prioritárias frente à referência</h3>
+                <p class="hint">A referência vigente é obtida pela data abaixo e pelos percentuais cadastrados na subaba Referências.</p>
+              </div>
+              <div class="field priority-date-field no-print">
+                <label for="commercialPriorityDate">Data do acompanhamento</label>
+                <select id="commercialPriorityDate" aria-label="Data do acompanhamento"></select>
+              </div>
+            </div>
+            <div class="commercial-toolbar no-print">
+              <div class="commercial-summary" id="commercialPrioritySummary"></div>
+              <div class="commercial-toolbar-actions">
+                <button class="btn dark small" id="commercialPriorityClearFiltersBtn">Limpar filtros</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="report-table commercial-priority-table">
+                <thead><tr><th>Gerente</th><th>Entrega</th><th>Objetivo</th><th>Realizado</th><th>% realizado</th><th>% referência</th><th>Meta até a data</th><th>Falta para chegar na referência</th><th>Status</th></tr></thead>
+                <tbody id="commercialPriorityBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div id="commercialInputView" class="commercial-view">
+          <div class="card-body">
+            <p class="soft-note"><strong>F-LOG:</strong> selecione um gerente e informe Objetivo e Realizado. Cada alteração é salva automaticamente neste navegador. Linhas com Objetivo e Realizado iguais a zero não entram na consolidação.</p>
+            <div class="commercial-input-header">
+              <div class="field">
+                <label for="commercialManagerSelect">Gerente</label>
+                <select id="commercialManagerSelect"></select>
+              </div>
+              <div class="commercial-selected-manager" id="commercialSelectedManagerInfo"></div>
+            </div>
+            <div class="table-wrap">
+              <table class="commercial-input-table">
+                <thead><tr><th>Produto</th><th>Objetivo</th><th>Realizado</th><th>%</th></tr></thead>
+                <tbody id="commercialInputBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div id="commercialConfigView" class="commercial-view">
+          <div class="card-body">
+            <p class="soft-note">Cadastre e edite produtos, segmentos e gerentes. Marque os produtos que devem aparecer em Prioritários. Marque um gerente como “linha mãe” para que ele ocupe a linha principal em negrito. É permitido um gerente mãe por segmento.</p>
+            <div class="setup-grid">
+              <div class="setup-card">
+                <div class="setup-card-head"><h3>Produtos</h3></div>
+                <div class="setup-card-body">
+                  <div class="inline-create">
+                    <input id="newCommercialProductName" type="text" placeholder="Novo produto" />
+                    <button class="btn dark small" id="addCommercialProductBtn">Adicionar</button>
+                  </div>
+                  <div class="table-wrap">
+                    <table class="config-table" id="commercialProductsTable">
+                      <thead><tr><th>Produto</th><th style="width:130px">Prioritário</th><th></th></tr></thead><tbody></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <div class="setup-card">
+                <div class="setup-card-head"><h3>Segmentos</h3></div>
+                <div class="setup-card-body">
+                  <div class="inline-create">
+                    <input id="newCommercialSegmentName" type="text" placeholder="Novo segmento" />
+                    <button class="btn dark small" id="addCommercialSegmentBtn">Adicionar</button>
+                  </div>
+                  <div class="table-wrap">
+                    <table class="config-table" id="commercialSegmentsTable">
+                      <thead><tr><th>Segmento</th><th></th></tr></thead><tbody></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <div class="setup-card wide">
+                <div class="setup-card-head"><h3>Gerentes</h3></div>
+                <div class="setup-card-body">
+                  <div class="inline-create manager-create">
+                    <input id="newCommercialManagerName" type="text" placeholder="Novo gerente" />
+                    <select id="newCommercialManagerSegment"></select>
+                    <button class="btn dark small" id="addCommercialManagerBtn">Adicionar</button>
+                  </div>
+                  <div class="table-wrap">
+                    <table class="config-table" id="commercialManagersTable">
+                      <thead><tr><th>Gerente</th><th>Segmento</th><th style="width:120px">Linha mãe</th><th></th></tr></thead><tbody></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="commercialReferencesView" class="commercial-view">
+          <div class="card-head">
+            <div>
+              <h3>Referências das entregas prioritárias</h3>
+              <p class="hint">Edite as datas e os percentuais de referência. Campos vazios mantêm a última referência válida daquela entrega.</p>
+            </div>
+            <button class="btn dark small no-print" id="addRefRowBtn">Adicionar data</button>
+          </div>
+          <div class="card-body">
+            <div class="table-wrap">
+              <table id="refTable">
+                <thead><tr><th>Data</th><th>Cartão</th><th>Previdência</th><th>Consórcio Varejo</th><th>Consórcio Prime</th><th class="no-print"></th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="launchPanel" class="tab-panel" hidden aria-hidden="true">
+      <div class="card">
+        <div class="card-head">
+          <div><h2>Lançamentos dos gerentes</h2><p class="hint">Informe objetivo e realizado. Quando ambos forem zero, o indicador será tratado como não medido e não aparecerá no relatório.</p></div>
+          <button class="btn dark small no-print" id="addManagerBtn">Adicionar gerente</button>
+        </div>
+        <div class="card-body">
+          <div class="field-row" style="margin-bottom:14px">
+            <div class="field">
+              <label for="analysisDate">Data do acompanhamento</label>
+              <input id="analysisDate" type="date" />
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table id="managerTable">
+              <thead>
+                <tr>
+                  <th rowspan="2">Gerente</th>
+                  <th colspan="2">Cartão</th><th colspan="2">Previdência</th>
+                  <th colspan="2">Consórcio Varejo</th><th colspan="2">Consórcio Prime</th>
+                  <th rowspan="2" class="no-print"></th>
+                </tr>
+                <tr><th>Objetivo</th><th>Realizado</th><th>Objetivo</th><th>Realizado</th><th>Objetivo</th><th>Realizado</th><th>Objetivo</th><th>Realizado</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="reportPanel" class="tab-panel" hidden aria-hidden="true">
+      <div class="card">
+        <div class="card-head">
+          <div><h2>Relatório de cumprimento</h2><p class="hint" id="reportDateLabel"></p></div>
+          <div class="header-actions no-print">
+            <button class="btn dark small" id="csvBtn">Exportar CSV</button>
+            <button class="btn dark small" id="printBtn">Imprimir / PDF</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div id="referenceStrip" class="reference-strip"></div>
+          <div id="kpiGrid" class="kpi-grid"></div>
+          <div class="table-wrap">
+            <table class="report-table">
+              <thead><tr><th>Gerente</th><th>Entrega</th><th>Objetivo</th><th>Realizado</th><th>% realizado</th><th>% referência</th><th>Meta até a data</th><th>Falta em valor</th><th>Falta em p.p.</th><th>Status</th></tr></thead>
+              <tbody id="reportBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+    import {
+      getAuth,
+      setPersistence,
+      browserLocalPersistence,
+      onAuthStateChanged,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      sendPasswordResetEmail,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+      onSnapshot,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAopj8jHKsIGAZds8YmL2CB1VV7u3zFYes",
+      authDomain: "mesada-kids-f3c6f.firebaseapp.com",
+      projectId: "mesada-kids-f3c6f",
+      storageBucket: "mesada-kids-f3c6f.firebasestorage.app",
+      messagingSenderId: "822402484433",
+      appId: "1:822402484433:web:6933ce1a0bde6a60b69df0"
+    };
+
+    const firebaseApp = initializeApp(firebaseConfig);
+    const auth = getAuth(firebaseApp);
+    const db = getFirestore(firebaseApp);
+    const STORAGE_KEY = 'painelGestaoCompleto_v1'; // chave legada, usada somente para migração
+    const USER_STORAGE_PREFIX = 'painelGestaoCompleto_usuario_';
+    const CLIENT_ID = globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : String(Date.now() + Math.random());
+    const makeId = () => (globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : String(Date.now() + Math.random()));
+
+    const products = [
+      { label: 'Cartão', ref: 'card', obj: 'cardObj', real: 'cardReal' },
+      { label: 'Previdência', ref: 'previdencia', obj: 'prevObj', real: 'prevReal' },
+      { label: 'Consórcio Varejo', ref: 'varejo', obj: 'varejoObj', real: 'varejoReal' },
+      { label: 'Consórcio Prime', ref: 'prime', obj: 'primeObj', real: 'primeReal' }
+    ];
+
+
+    const defaultCommercial = () => {
+      const varejoId = makeId();
+      const primeId = makeId();
+      const consorcioId = makeId();
+      const capitalGiroId = makeId();
+      const hugoId = makeId();
+      const mateusId = makeId();
+      const grazieleId = makeId();
+      const marcosId = makeId();
+      return {
+        products: [
+          { id: consorcioId, name: 'Consórcio', isPriority: true },
+          { id: capitalGiroId, name: 'Capital de Giro', isPriority: false }
+        ],
+        segments: [
+          { id: varejoId, name: 'Varejo' },
+          { id: primeId, name: 'Prime' }
+        ],
+        managers: [
+          { id: hugoId, name: 'Hugo - Varejo PJ', isParent: false, segmentId: varejoId },
+          { id: mateusId, name: 'Mateus - Varejo PJ', isParent: false, segmentId: varejoId },
+          { id: grazieleId, name: 'Graziele - Prime', isParent: false, segmentId: primeId },
+          { id: marcosId, name: 'Marcos - Prime', isParent: false, segmentId: primeId }
+        ],
+        entries: [
+          { managerId: hugoId, productId: consorcioId, objective: 300000, realized: 320000 },
+          { managerId: hugoId, productId: capitalGiroId, objective: 1350000, realized: 1450000 },
+          { managerId: mateusId, productId: consorcioId, objective: 300000, realized: 315000 },
+          { managerId: mateusId, productId: capitalGiroId, objective: 2100000, realized: 998000 },
+          { managerId: grazieleId, productId: consorcioId, objective: 100000, realized: 98000 },
+          { managerId: grazieleId, productId: capitalGiroId, objective: 220000, realized: 320000 },
+          { managerId: marcosId, productId: consorcioId, objective: 100000, realized: 60000 },
+          { managerId: marcosId, productId: capitalGiroId, objective: 350000, realized: 160000 }
+        ]
+      };
+    };
+
+    const defaultState = () => ({
+      groupTitle: 'GRUPO 5 - VAREJO',
+      analysisDate: '2026-08-07',
+      commercial: defaultCommercial(),
+      scores: [
+        { id: makeId(), name: 'AV. BRASIL-UIPATINGA', current: 101.73, informed: 87.35 },
+        { id: makeId(), name: 'PALMARES-UBH', current: 84.00, informed: 80.23 },
+        { id: makeId(), name: 'VENDA NOVA-UBH', current: 76.21, informed: 97.82 },
+        { id: makeId(), name: 'SABARA-CTO', current: 74.96, informed: 91.27 },
+        { id: makeId(), name: 'JUSTINOPOLIS-R.NEVES', current: 73.84, informed: 63.99 },
+        { id: makeId(), name: 'VESPASIANO', current: 66.31, informed: 89.61 },
+        { id: makeId(), name: 'AV. P. ANT. CARLOS-UBH', current: 59.36, informed: 64.20 }
+      ],
+      references: [
+        { id: makeId(), date: '2026-08-07', card: 30, previdencia: 20, varejo: 30, prime: 30 },
+        { id: makeId(), date: '2026-08-14', card: 70, previdencia: 50, varejo: 50, prime: 50 },
+        { id: makeId(), date: '2026-08-20', card: '', previdencia: 70, varejo: '', prime: '' },
+        { id: makeId(), date: '2026-08-24', card: 100, previdencia: '', varejo: '', prime: '' },
+        { id: makeId(), date: '2026-08-25', card: '', previdencia: '', varejo: 100, prime: 100 },
+        { id: makeId(), date: '2026-08-27', card: '', previdencia: 100, varejo: '', prime: '' }
+      ],
+      managers: [
+        { id: makeId(), name: 'Gerente Exemplo 1', cardObj: 100, cardReal: 24, prevObj: 200, prevReal: 35, varejoObj: 50, varejoReal: 17, primeObj: 80, primeReal: 30 },
+        { id: makeId(), name: 'Gerente Exemplo 2', cardObj: 100, cardReal: 38, prevObj: 200, prevReal: 50, varejoObj: 50, varejoReal: 10, primeObj: 80, primeReal: 15 }
+      ]
+    });
+
+    let state = defaultState();
+    let toastTimer;
+    let saveTimer;
+    let pendingChanges = false;
+    let volatileSavedState = null;
+    let storagePersistent = true;
+    let currentUser = null;
+    let currentUserDoc = null;
+    let unsubscribeCloud = null;
+    let cloudReady = false;
+    let lastSavedJson = '';
+    let authMode = 'login';
+    const commercialUi = {
+      view: 'commercialScoreView',
+      expanded: new Set(),
+      filters: { products: new Set(), segments: new Set(), managers: new Set() },
+      selectedManagerId: ''
+    };
+
+    function setSyncStatus(message, type = '') {
+      const el = document.getElementById('syncStatus');
+      if (!el) return;
+      el.textContent = message;
+      el.className = `sync-status ${type}`.trim();
+    }
+
+    function isValidState(value) {
+      return value && Array.isArray(value.scores) && Array.isArray(value.references) && Array.isArray(value.managers);
+    }
+
+
+
+    function normalizeCommercial(value) {
+      if (!value || typeof value !== 'object') return defaultCommercial();
+      const products = Array.isArray(value.products) ? value.products
+        .filter(x => x && x.id)
+        .map(x => ({ id: String(x.id), name: String(x.name || ''), isPriority: Boolean(x.isPriority) })) : [];
+      const segments = Array.isArray(value.segments) ? value.segments
+        .filter(x => x && x.id)
+        .map(x => ({ id: String(x.id), name: String(x.name || '') })) : [];
+      const productIds = new Set(products.map(x => x.id));
+      const segmentIds = new Set(segments.map(x => x.id));
+      const managers = Array.isArray(value.managers) ? value.managers
+        .filter(x => x && x.id)
+        .map(x => ({ id: String(x.id), name: String(x.name || ''), segmentId: String(x.segmentId || ''), isParent: Boolean(x.isParent) }))
+        .filter(x => !x.segmentId || segmentIds.has(x.segmentId)) : [];
+      const managerIds = new Set(managers.map(x => x.id));
+      const entries = Array.isArray(value.entries) ? value.entries
+        .filter(x => x && managerIds.has(String(x.managerId)) && productIds.has(String(x.productId)))
+        .map(x => ({
+          managerId: String(x.managerId),
+          productId: String(x.productId),
+          objective: numberOrBlank(x.objective),
+          realized: numberOrBlank(x.realized)
+        })) : [];
+      return { products, segments, managers, entries };
+    }
+
+    function normalizeState(value) {
+      const base = isValidState(value) ? value : defaultState();
+      return { ...base, commercial: normalizeCommercial(base.commercial) };
+    }
+
+    function userStorageKey(uid) {
+      return `${USER_STORAGE_PREFIX}${uid}`;
+    }
+
+    function readLocalCache(uid) {
+      if (!uid) return null;
+      try {
+        const raw = localStorage.getItem(userStorageKey(uid));
+        storagePersistent = true;
+        return raw;
+      } catch (error) {
+        storagePersistent = false;
+        console.warn('O navegador bloqueou o cache local.', error);
+        return volatileSavedState;
+      }
+    }
+
+    function writeLocalCache(uid, raw) {
+      if (!uid) return false;
+      volatileSavedState = raw;
+      try {
+        localStorage.setItem(userStorageKey(uid), raw);
+        storagePersistent = true;
+        return true;
+      } catch (error) {
+        storagePersistent = false;
+        console.warn('O cache local não pôde ser gravado.', error);
+        return false;
+      }
+    }
+
+    function readLegacyState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return isValidState(parsed) ? normalizeState(parsed) : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function loadCachedState(uid) {
+      try {
+        const raw = readLocalCache(uid);
+        return raw ? normalizeState(JSON.parse(raw)) : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function saveState(show = false) {
+      pendingChanges = true;
+      setSyncStatus('Salvando na nuvem...', 'saving');
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => persistState(show), 650);
+    }
+
+    async function persistState(show = false) {
+      clearTimeout(saveTimer);
+      syncScoresWithCommercialManagers();
+      const raw = JSON.stringify(state);
+
+      if (currentUser) writeLocalCache(currentUser.uid, raw);
+      if (!currentUser || !currentUserDoc || !cloudReady) {
+        setSyncStatus('Aguardando conexão...', 'saving');
+        return false;
+      }
+      if (!pendingChanges && raw === lastSavedJson && !show) return true;
+
+      try {
+        await setDoc(currentUserDoc, {
+          payload: state,
+          updatedAt: serverTimestamp(),
+          updatedBy: currentUser.uid,
+          updatedByEmail: currentUser.email || '',
+          clientId: CLIENT_ID
+        }, { merge: true });
+        pendingChanges = false;
+        lastSavedJson = raw;
+        setSyncStatus('Salvo na nuvem', 'ok');
+        if (show) toast('Dados salvos na sua conta.');
+        return true;
+      } catch (error) {
+        console.error('Falha ao salvar no Firebase:', error);
+        setSyncStatus(navigator.onLine ? 'Falha ao salvar' : 'Sem internet — alteração guardada neste aparelho', 'error');
+        if (show) toast('Não foi possível salvar na nuvem agora.');
+        return false;
+      }
+    }
+
+    async function loadUserState(user) {
+      currentUserDoc = doc(db, 'painelGestaoUsuarios', user.uid, 'dados', 'principal');
+      setSyncStatus('Carregando da nuvem...', 'saving');
+
+      const snapshot = await getDoc(currentUserDoc);
+      if (snapshot.exists() && isValidState(snapshot.data()?.payload)) {
+        state = normalizeState(snapshot.data().payload);
+      } else {
+        const cached = loadCachedState(user.uid);
+        const legacy = !cached ? readLegacyState() : null;
+        if (cached) {
+          state = cached;
+        } else if (legacy && confirm('Foram encontrados dados do modelo antigo neste navegador. Deseja importá-los para esta conta?')) {
+          state = legacy;
+        } else {
+          state = defaultState();
+        }
+      }
+
+      syncScoresWithCommercialManagers();
+      lastSavedJson = JSON.stringify(state);
+      writeLocalCache(user.uid, lastSavedJson);
+      renderAll();
+      cloudReady = true;
+
+      if (!snapshot.exists()) {
+        pendingChanges = true;
+        await persistState();
+      } else {
+        setSyncStatus('Salvo na nuvem', 'ok');
+      }
+
+      if (unsubscribeCloud) unsubscribeCloud();
+      unsubscribeCloud = onSnapshot(currentUserDoc, snap => {
+        if (!snap.exists()) return;
+        const data = snap.data();
+        if (!isValidState(data?.payload)) return;
+        const incoming = normalizeState(data.payload);
+        const incomingRaw = JSON.stringify(incoming);
+
+        if (data.clientId === CLIENT_ID || incomingRaw === lastSavedJson) {
+          lastSavedJson = incomingRaw;
+          if (!pendingChanges) setSyncStatus('Salvo na nuvem', 'ok');
+          return;
+        }
+
+        if (pendingChanges) {
+          setSyncStatus('Alteração em outro dispositivo detectada', 'error');
+          return;
+        }
+
+        state = incoming;
+        lastSavedJson = incomingRaw;
+        writeLocalCache(user.uid, incomingRaw);
+        renderAll();
+        setSyncStatus('Atualizado pela nuvem', 'ok');
+      }, error => {
+        console.error('Falha na sincronização em tempo real:', error);
+        setSyncStatus('Falha na sincronização', 'error');
+      });
+    }
+    function setAuthMessage(message = '', type = '') {
+      const el = document.getElementById('authMessage');
+      el.textContent = message;
+      el.className = `auth-message ${type}`.trim();
+    }
+
+    function setAuthBusy(busy) {
+      const button = document.getElementById('authSubmitBtn');
+      button.disabled = busy;
+      button.textContent = busy ? 'Aguarde...' : (authMode === 'register' ? 'Criar conta' : 'Entrar');
+    }
+
+    function setAuthMode(mode) {
+      authMode = mode;
+      const registering = mode === 'register';
+      document.getElementById('loginTabBtn').classList.toggle('active', !registering);
+      document.getElementById('registerTabBtn').classList.toggle('active', registering);
+      document.getElementById('confirmPasswordField').hidden = !registering;
+      document.getElementById('authPasswordConfirm').required = registering;
+      document.getElementById('authPassword').autocomplete = registering ? 'new-password' : 'current-password';
+      document.getElementById('authSubmitBtn').textContent = registering ? 'Criar conta' : 'Entrar';
+      document.getElementById('forgotPasswordBtn').hidden = registering;
+      setAuthMessage();
+    }
+
+    function authErrorMessage(error) {
+      const code = String(error?.code || '');
+      const messages = {
+        'auth/invalid-email': 'Digite um e-mail válido.',
+        'auth/missing-password': 'Digite a senha.',
+        'auth/weak-password': 'A senha precisa ter pelo menos 6 caracteres.',
+        'auth/email-already-in-use': 'Este e-mail já possui uma conta.',
+        'auth/invalid-credential': 'E-mail ou senha incorretos.',
+        'auth/user-disabled': 'Esta conta foi desativada.',
+        'auth/too-many-requests': 'Muitas tentativas. Aguarde alguns minutos.',
+        'auth/network-request-failed': 'Falha de conexão. Verifique a internet.',
+        'auth/operation-not-allowed': 'O login por e-mail e senha não está ativado no Firebase.'
+      };
+      return messages[code] || `Não foi possível concluir a operação (${code || 'erro desconhecido'}).`;
+    }
+
+    function showAuth() {
+      document.getElementById('appShell').hidden = true;
+      document.getElementById('authScreen').hidden = false;
+      document.getElementById('authLoading').hidden = true;
+      document.getElementById('authContent').hidden = false;
+      document.getElementById('authPassword').value = '';
+      document.getElementById('authPasswordConfirm').value = '';
+      setAuthBusy(false);
+    }
+
+    function showApp(user) {
+      document.getElementById('authScreen').hidden = true;
+      document.getElementById('appShell').hidden = false;
+      document.getElementById('userEmailBadge').textContent = user.email || 'Usuário conectado';
+    }
+
+    async function handleSignedInUser(user) {
+      currentUser = user;
+      cloudReady = false;
+      showApp(user);
+      try {
+        await loadUserState(user);
+      } catch (error) {
+        console.error('Falha ao carregar os dados do usuário:', error);
+        const cached = loadCachedState(user.uid);
+        state = cached || defaultState();
+        renderAll();
+        cloudReady = true;
+        setSyncStatus('Falha ao carregar a nuvem', 'error');
+        toast('Não foi possível carregar a nuvem. Verifique a conexão e as regras do Firestore.');
+      }
+    }
+
+    async function handleSignedOutUser() {
+      clearTimeout(saveTimer);
+      pendingChanges = false;
+      cloudReady = false;
+      currentUser = null;
+      currentUserDoc = null;
+      lastSavedJson = '';
+      if (unsubscribeCloud) {
+        unsubscribeCloud();
+        unsubscribeCloud = null;
+      }
+      state = defaultState();
+      showAuth();
+    }
+
+    function toast(message) {
+      const el = document.getElementById('toast');
+      el.textContent = message;
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+    }
+    function esc(value) {
+      return String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+    }
+    function toNumber(value) {
+      const n = Number(String(value ?? '').replace(',', '.'));
+      return Number.isFinite(n) ? n : 0;
+    }
+    function numberOrBlank(value) {
+      return value === '' || value === null || value === undefined ? '' : toNumber(value);
+    }
+    function fmt(value, decimals = 2) {
+      return toNumber(value).toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+    }
+    function fmtPct(value, decimals = 1) { return `${fmt(value, decimals)}%`; }
+    function fmtDate(date) {
+      if (!date) return 'não informada';
+      const [y,m,d] = date.split('-');
+      return `${d}/${m}/${y}`;
+    }
+
+    function colorForScore(value) {
+      if (value <= 60) return 'var(--purple)';
+      if (value <= 80) return 'var(--red)';
+      if (value <= 100) return 'var(--green)';
+      if (value <= 110) return 'var(--blue)';
+      return 'var(--yellow)';
+    }
+
+    function switchTab(id) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === id));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === id));
+      if (id === 'reportPanel') renderReport();
+      if (id === 'commercialPanel') renderCommercialAll();
+    }
+
+    function syncScoresWithCommercialManagers() {
+      const managers = [...commercialData().managers].sort(byName);
+      const original = Array.isArray(state.scores) ? state.scores : [];
+      const used = new Set();
+
+      const findUnused = predicate => {
+        const row = original.find(item => !used.has(item) && predicate(item));
+        if (row) used.add(row);
+        return row;
+      };
+
+      state.scores = managers.map(manager => {
+        let score = findUnused(item => String(item.managerId || '') === manager.id);
+        if (!score) {
+          const targetName = String(manager.name || '').trim().toLocaleLowerCase('pt-BR');
+          score = findUnused(item => String(item.name || '').trim().toLocaleLowerCase('pt-BR') === targetName);
+        }
+        // Migração de versões antigas: usa, uma única vez, a próxima linha ainda sem vínculo.
+        if (!score) score = findUnused(item => !item.managerId);
+        return {
+          id: score?.id || makeId(),
+          managerId: manager.id,
+          name: manager.name,
+          current: score?.current ?? '',
+          informed: score?.informed ?? ''
+        };
+      });
+      return state.scores;
+    }
+
+    function renderScores() {
+      syncScoresWithCommercialManagers();
+      document.getElementById('groupTitle').value = state.groupTitle || '';
+      document.querySelectorAll('.chart-title')[0].textContent = `Pontuação — ${state.groupTitle || 'Grupo'}`;
+      document.querySelectorAll('.chart-title')[1].textContent = `Informado — ${state.groupTitle || 'Grupo'}`;
+      const body = document.querySelector('#scoreTable tbody');
+      body.innerHTML = state.scores.length ? state.scores.map(row => `
+        <tr data-id="${row.id}" data-manager-id="${esc(row.managerId)}">
+          <td class="name-cell"><span class="score-manager-name">${esc(row.name)}</span></td>
+          <td><input data-field="current" type="number" step="0.01" value="${esc(row.current)}" /></td>
+          <td><input data-field="informed" type="number" step="0.01" value="${esc(row.informed)}" /></td>
+        </tr>`).join('') : '<tr><td colspan="3" class="commercial-empty">Cadastre ao menos um gerente na subaba Cadastros.</td></tr>';
+      renderBarChart('currentChart', 'current', false);
+      renderBarChart('informedChart', 'informed', true);
+    }
+
+    function renderBarChart(containerId, field, gray) {
+      const container = document.getElementById(containerId);
+      const data = state.scores
+        .filter(x => String(x.name || '').trim() && Number.isFinite(Number(x[field])))
+        .map(x => ({ name: x.name, value: toNumber(x[field]) }))
+        .sort((a,b) => b.value - a.value);
+      if (!data.length) { container.innerHTML = '<div class="empty-state">Nenhum dado informado.</div>'; return; }
+      const maxValue = Math.max(140, Math.ceil(Math.max(...data.map(x => x.value)) / 20) * 20);
+      const ticks = [0, .2, .4, .6, .8, 1].map(x => Math.round(maxValue * x));
+      container.innerHTML = `
+        <div class="axis-row"><span></span><div class="axis-track">${ticks.map(t => `<span>${t}</span>`).join('')}</div><span></span></div>
+        ${data.map(x => `
+          <div class="bar-row">
+            <div class="bar-label" title="${esc(x.name)}">${esc(x.name)}</div>
+            <div class="bar-track"><div class="bar" style="width:${Math.max(0, Math.min(100, x.value / maxValue * 100))}%;background:${gray ? 'var(--graybar)' : colorForScore(x.value)}"></div></div>
+            <div class="bar-value">${fmt(x.value, 2)}</div>
+          </div>`).join('')}`;
+    }
+
+    function renderReferences() {
+      const body = document.querySelector('#refTable tbody');
+      const rows = [...state.references].sort((a,b) => String(a.date).localeCompare(String(b.date)));
+      body.innerHTML = rows.map(row => `
+        <tr data-id="${row.id}">
+          <td><input data-field="date" type="date" value="${esc(row.date)}" /></td>
+          ${['card','previdencia','varejo','prime'].map(f => `<td><input data-field="${f}" type="number" min="0" step="1" placeholder="—" value="${esc(row[f])}" /></td>`).join('')}
+          <td class="action-cell no-print"><button class="icon-btn delete-ref" title="Excluir">×</button></td>
+        </tr>`).join('');
+    }
+
+    function renderManagers() {
+      document.getElementById('analysisDate').value = state.analysisDate || '';
+      const body = document.querySelector('#managerTable tbody');
+      body.innerHTML = state.managers.map(row => `
+        <tr data-id="${row.id}">
+          <td class="name-cell"><input data-field="name" type="text" value="${esc(row.name)}" /></td>
+          ${['cardObj','cardReal','prevObj','prevReal','varejoObj','varejoReal','primeObj','primeReal'].map(f => `<td><input data-field="${f}" type="number" min="0" step="0.01" value="${esc(row[f])}" /></td>`).join('')}
+          <td class="action-cell no-print"><button class="icon-btn delete-manager" title="Excluir">×</button></td>
+        </tr>`).join('');
+    }
+
+    function getCurrentReference(refKey) {
+      const cutoff = state.analysisDate || '9999-12-31';
+      const candidates = state.references
+        .filter(r => r.date && r.date <= cutoff && r[refKey] !== '' && r[refKey] !== null && r[refKey] !== undefined)
+        .sort((a,b) => a.date.localeCompare(b.date));
+      if (!candidates.length) return { pct: null, date: '' };
+      const r = candidates[candidates.length - 1];
+      return { pct: toNumber(r[refKey]), date: r.date };
+    }
+
+    function buildReportRows() {
+      const refs = Object.fromEntries(products.map(p => [p.ref, getCurrentReference(p.ref)]));
+      const rows = [];
+      state.managers.filter(m => String(m.name || '').trim()).forEach(manager => {
+        products.forEach(product => {
+          const objective = toNumber(manager[product.obj]);
+          const realized = toNumber(manager[product.real]);
+          if (objective === 0 && realized === 0) return;
+          const refInfo = refs[product.ref];
+          const realizedPct = objective > 0 ? realized / objective * 100 : null;
+          const target = objective > 0 && refInfo.pct !== null ? objective * refInfo.pct / 100 : null;
+          const missingValue = target !== null ? Math.max(target - realized, 0) : null;
+          const missingPp = realizedPct !== null && refInfo.pct !== null ? Math.max(refInfo.pct - realizedPct, 0) : null;
+          let status = 'SEM OBJETIVO';
+          if (objective > 0 && refInfo.pct === null) status = 'SEM REFERÊNCIA';
+          else if (objective > 0) status = realizedPct >= refInfo.pct ? 'CUMPRIU A REFERÊNCIA' : 'ABAIXO DA REFERÊNCIA';
+          rows.push({ manager: manager.name, product: product.label, objective, realized, realizedPct, refPct: refInfo.pct, refDate: refInfo.date, target, missingValue, missingPp, status });
+        });
+      });
+      return { rows, refs };
+    }
+
+    function renderReport() {
+      const { rows, refs } = buildReportRows();
+      document.getElementById('reportDateLabel').textContent = `Data analisada: ${fmtDate(state.analysisDate)}`;
+      document.getElementById('referenceStrip').innerHTML = products.map(p => {
+        const r = refs[p.ref];
+        return `<div class="ref-card"><strong>${p.label}</strong><span class="ref-value">${r.pct === null ? '—' : fmtPct(r.pct,0)}</span><div class="hint">${r.date ? `vigente desde ${fmtDate(r.date)}` : 'sem referência'}</div></div>`;
+      }).join('');
+
+      const valid = rows.filter(r => r.objective > 0 && r.refPct !== null);
+      const met = valid.filter(r => r.status === 'CUMPRIU A REFERÊNCIA').length;
+      const below = valid.filter(r => r.status === 'ABAIXO DA REFERÊNCIA').length;
+      const managers = new Set(rows.map(r => r.manager)).size;
+      const compliance = valid.length ? met / valid.length * 100 : 0;
+      document.getElementById('kpiGrid').innerHTML = `
+        <div class="kpi"><div class="kpi-label">Gerentes</div><div class="kpi-value">${managers}</div></div>
+        <div class="kpi"><div class="kpi-label">Entregas avaliadas</div><div class="kpi-value">${valid.length}</div></div>
+        <div class="kpi"><div class="kpi-label">Abaixo da referência</div><div class="kpi-value">${below}</div></div>
+        <div class="kpi"><div class="kpi-label">Índice de cumprimento</div><div class="kpi-value">${fmtPct(compliance,0)}</div></div>`;
+
+      const body = document.getElementById('reportBody');
+      if (!rows.length) { body.innerHTML = '<tr><td colspan="10" class="empty-state">Nenhum gerente informado.</td></tr>'; return; }
+      body.innerHTML = rows.map((r, i) => {
+        const cls = r.status === 'CUMPRIU A REFERÊNCIA' ? 'ok' : r.status === 'ABAIXO DA REFERÊNCIA' ? 'bad' : 'neutral';
+        return `<tr class="${i % 4 === 0 ? 'manager-start' : ''}">
+          <td>${esc(r.manager)}</td><td>${esc(r.product)}</td>
+          <td class="num">${fmt(r.objective)}</td><td class="num">${fmt(r.realized)}</td>
+          <td class="num">${r.realizedPct === null ? '—' : fmtPct(r.realizedPct)}</td>
+          <td class="num">${r.refPct === null ? '—' : fmtPct(r.refPct,0)}</td>
+          <td class="num">${r.target === null ? '—' : fmt(r.target)}</td>
+          <td class="num">${r.missingValue === null ? '—' : fmt(r.missingValue)}</td>
+          <td class="num">${r.missingPp === null ? '—' : fmtPct(r.missingPp)}</td>
+          <td><span class="status ${cls}">${r.status}</span></td>
+        </tr>`;
+      }).join('');
+    }
+
+
+
+    function commercialData() {
+      const value = state.commercial;
+      const valid = value && typeof value === 'object' &&
+        Array.isArray(value.products) && Array.isArray(value.segments) &&
+        Array.isArray(value.managers) && Array.isArray(value.entries);
+      if (!valid) state.commercial = normalizeCommercial(value);
+      return state.commercial;
+    }
+
+    function byName(a, b) {
+      return String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR', { sensitivity: 'base' });
+    }
+
+    function commercialEntry(managerId, productId, create = false) {
+      const data = commercialData();
+      let entry = data.entries.find(x => x.managerId === managerId && x.productId === productId);
+      if (!entry && create) {
+        entry = { managerId, productId, objective: '', realized: '' };
+        data.entries.push(entry);
+      }
+      return entry;
+    }
+
+    function commercialPct(objective, realized) {
+      const obj = toNumber(objective);
+      return obj > 0 ? toNumber(realized) / obj * 100 : null;
+    }
+
+    function normalizeCommercialLabel(value) {
+      return String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLocaleLowerCase('pt-BR')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+    }
+
+    function commercialReferenceKey(product, segment) {
+      const productName = normalizeCommercialLabel(product?.name);
+      const segmentName = normalizeCommercialLabel(segment?.name);
+      if (productName.includes('cartao')) return 'card';
+      if (productName.includes('previdencia')) return 'previdencia';
+      if (productName.includes('consorcio')) {
+        if (productName.includes('prime') || segmentName.includes('prime')) return 'prime';
+        if (productName.includes('varejo') || segmentName.includes('varejo')) return 'varejo';
+      }
+      return null;
+    }
+
+    function commercialPriorityReferenceDates() {
+      return [...new Set(
+        state.references
+          .map(row => String(row.date || '').trim())
+          .filter(date => /^\d{4}-\d{2}-\d{2}$/.test(date))
+      )].sort((a, b) => a.localeCompare(b));
+    }
+
+    function resolveCommercialPriorityDate(dates) {
+      if (!dates.length) return '';
+      if (dates.includes(state.analysisDate)) return state.analysisDate;
+      const cutoff = state.analysisDate || '9999-12-31';
+      const previous = dates.filter(date => date <= cutoff);
+      return previous.length ? previous[previous.length - 1] : dates[0];
+    }
+
+    function buildCommercialPriorityRows() {
+      const groups = currentCommercialGroups().filter(group => Boolean(group.product.isPriority));
+      const rows = groups.map(group => {
+        const refKey = commercialReferenceKey(group.product, group.segment);
+        const refInfo = refKey ? getCurrentReference(refKey) : { pct: null, date: '' };
+        const realizedPct = group.pct;
+        const target = group.objective > 0 && refInfo.pct !== null ? group.objective * refInfo.pct / 100 : null;
+        const missingValue = target !== null ? Math.max(target - group.realized, 0) : null;
+        const missingPp = realizedPct !== null && refInfo.pct !== null ? Math.max(refInfo.pct - realizedPct, 0) : null;
+        let status = 'SEM OBJETIVO';
+        if (group.objective > 0 && refInfo.pct === null) status = 'SEM REFERÊNCIA';
+        else if (group.objective > 0) status = realizedPct >= refInfo.pct ? 'CUMPRIU A REFERÊNCIA' : 'ABAIXO DA REFERÊNCIA';
+        return {
+          group,
+          manager: group.parentLabel,
+          product: group.product.name,
+          segment: group.segment.name,
+          objective: group.objective,
+          realized: group.realized,
+          realizedPct,
+          refKey,
+          refPct: refInfo.pct,
+          refDate: refInfo.date,
+          target,
+          missingValue,
+          missingPp,
+          status
+        };
+      });
+      return { groups, rows };
+    }
+
+    function renderCommercialPriorities() {
+      const dateSelect = document.getElementById('commercialPriorityDate');
+      const referenceDates = commercialPriorityReferenceDates();
+      const resolvedDate = resolveCommercialPriorityDate(referenceDates);
+
+      if (state.analysisDate !== resolvedDate) {
+        state.analysisDate = resolvedDate;
+        const globalDate = document.getElementById('analysisDate');
+        if (globalDate) globalDate.value = resolvedDate;
+        saveState();
+      }
+
+      if (dateSelect) {
+        dateSelect.disabled = referenceDates.length === 0;
+        dateSelect.innerHTML = referenceDates.length
+          ? referenceDates.map(date => `<option value="${esc(date)}">${fmtDate(date)}</option>`).join('')
+          : '<option value="">Nenhuma data cadastrada</option>';
+        dateSelect.value = resolvedDate;
+      }
+
+      const { rows } = buildCommercialPriorityRows();
+      const data = commercialData();
+      const priorityProducts = data.products.filter(product => product.isPriority);
+      const activeFilterCount = Object.values(commercialUi.filters).reduce((sum, set) => sum + set.size, 0);
+      const summary = document.getElementById('commercialPrioritySummary');
+      if (summary) summary.textContent = `${rows.length} entrega(s) prioritária(s)${activeFilterCount ? ` · ${activeFilterCount} filtro(s) selecionado(s)` : ''}`;
+
+      const body = document.getElementById('commercialPriorityBody');
+      if (!body) return;
+      if (!priorityProducts.length) {
+        body.innerHTML = '<tr><td colspan="9" class="commercial-empty">Nenhum produto foi marcado como Prioritário. Faça a seleção na aba Cadastros.</td></tr>';
+        return;
+      }
+      if (!rows.length) {
+        body.innerHTML = '<tr><td colspan="9" class="commercial-empty">Nenhuma entrega prioritária corresponde aos filtros ou possui dados no F-LOG.</td></tr>';
+        return;
+      }
+      body.innerHTML = rows.map(row => {
+        const cls = row.status === 'CUMPRIU A REFERÊNCIA' ? 'ok' : row.status === 'ABAIXO DA REFERÊNCIA' ? 'bad' : 'neutral';
+        return `<tr class="manager-start">
+          <td>${esc(row.manager)}</td>
+          <td><strong>${esc(row.product)}</strong><span class="delivery-segment">${esc(row.segment)}</span></td>
+          <td class="num">${fmtCommercial(row.objective)}</td>
+          <td class="num">${fmtCommercial(row.realized)}</td>
+          <td class="num">${row.realizedPct === null ? '—' : fmtPct(row.realizedPct, 1)}</td>
+          <td class="num">${row.refPct === null ? '—' : fmtPct(row.refPct, 0)}</td>
+          <td class="num">${row.target === null ? '—' : fmtCommercial(row.target)}</td>
+          <td class="num">${row.missingValue === null ? '—' : fmtCommercial(row.missingValue)}</td>
+          <td><span class="status ${cls}">${row.status}</span></td>
+        </tr>`;
+      }).join('');
+    }
+
+    function parseCommercialNumber(value) {
+      if (value === '' || value === null || value === undefined) return 0;
+      let text = String(value).trim();
+      if (!text) return 0;
+
+      text = text.replace(/\s/g, '').replace(/R\$/gi, '');
+      const negative = text.startsWith('-');
+      text = text.replace(/-/g, '');
+
+      if (text.includes(',')) {
+        // Padrão brasileiro: pontos separam milhares e vírgula separa decimais.
+        text = text.replace(/\./g, '').replace(',', '.');
+      } else {
+        const dots = (text.match(/\./g) || []).length;
+        if (dots > 1) {
+          // Ex.: 5.000.000
+          text = text.replace(/\./g, '');
+        } else if (dots === 1) {
+          const [integerPart, decimalPart = ''] = text.split('.');
+          // Ex.: 5.000 é tratado como cinco mil; 5000.50 continua decimal.
+          if (decimalPart.length === 3 && integerPart.length >= 1) {
+            text = integerPart + decimalPart;
+          }
+        }
+      }
+
+      text = text.replace(/[^0-9.]/g, '');
+      const parsed = Number(text);
+      if (!Number.isFinite(parsed)) return 0;
+      return negative ? -parsed : parsed;
+    }
+
+    function commercialNumberOrBlank(value) {
+      return value === '' || value === null || value === undefined
+        ? ''
+        : parseCommercialNumber(value);
+    }
+
+    function fmtCommercial(value) {
+      return parseCommercialNumber(value).toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function fmtCommercialDelta(value) {
+      const n = toNumber(value);
+      if (n < 0) return `- ${fmtCommercial(Math.abs(n))}`;
+      return fmtCommercial(n);
+    }
+
+    function cleanCommercialUiSelections() {
+      const data = commercialData();
+      const valid = {
+        products: new Set(data.products.map(x => x.id)),
+        segments: new Set(data.segments.map(x => x.id)),
+        managers: new Set(data.managers.map(x => x.id))
+      };
+      Object.keys(commercialUi.filters).forEach(key => {
+        commercialUi.filters[key] = new Set([...commercialUi.filters[key]].filter(id => valid[key].has(id)));
+      });
+      if (!data.managers.some(x => x.id === commercialUi.selectedManagerId)) {
+        commercialUi.selectedManagerId = [...data.managers].sort(byName)[0]?.id || '';
+      }
+    }
+
+    function currentCommercialGroups() {
+      cleanCommercialUiSelections();
+      const data = commercialData();
+      const productFilter = commercialUi.filters.products;
+      const segmentFilter = commercialUi.filters.segments;
+      const managerFilter = commercialUi.filters.managers;
+      const singleManagerMode = managerFilter.size === 1;
+      const productsList = [...data.products]
+        .filter(x => String(x.name || '').trim())
+        .filter(x => !productFilter.size || productFilter.has(x.id));
+      const segmentsList = [...data.segments]
+        .filter(x => String(x.name || '').trim())
+        .filter(x => !segmentFilter.size || segmentFilter.has(x.id));
+      const managersList = [...data.managers]
+        .filter(x => String(x.name || '').trim())
+        .filter(x => !managerFilter.size || managerFilter.has(x.id));
+      const groups = [];
+
+      productsList.forEach(product => {
+        segmentsList.forEach(segment => {
+          const visibleRows = managersList
+            .filter(manager => manager.segmentId === segment.id)
+            .map(manager => {
+              const entry = commercialEntry(manager.id, product.id, false);
+              const objective = toNumber(entry?.objective);
+              const realized = toNumber(entry?.realized);
+              return {
+                manager,
+                objective,
+                realized,
+                delta: realized - objective,
+                pct: commercialPct(objective, realized)
+              };
+            })
+            .filter(row => row.objective !== 0 || row.realized !== 0)
+            .sort((a, b) => {
+              const ap = a.pct ?? -Infinity;
+              const bp = b.pct ?? -Infinity;
+              return bp - ap || b.realized - a.realized || byName(a.manager, b.manager);
+            });
+
+          if (!visibleRows.length) return;
+
+          if (singleManagerMode) {
+            const row = visibleRows[0];
+            groups.push({
+              key: `${product.id}|${segment.id}|manager|${row.manager.id}`,
+              mode: 'single',
+              product,
+              segment,
+              parentManager: row.manager,
+              parentLabel: row.manager.name,
+              details: [],
+              managerIds: [row.manager.id],
+              objective: row.objective,
+              realized: row.realized,
+              delta: row.delta,
+              pct: row.pct
+            });
+            return;
+          }
+
+          const motherRow = visibleRows.find(row => row.manager.isParent);
+          if (motherRow) {
+            const details = visibleRows.filter(row => row.manager.id !== motherRow.manager.id);
+            groups.push({
+              key: `${product.id}|${segment.id}|mother|${motherRow.manager.id}`,
+              mode: 'mother',
+              product,
+              segment,
+              parentManager: motherRow.manager,
+              parentLabel: motherRow.manager.name,
+              details,
+              managerIds: [motherRow.manager.id, ...details.map(row => row.manager.id)],
+              objective: motherRow.objective,
+              realized: motherRow.realized,
+              delta: motherRow.delta,
+              pct: motherRow.pct
+            });
+            return;
+          }
+
+          const objective = visibleRows.reduce((sum, row) => sum + row.objective, 0);
+          const realized = visibleRows.reduce((sum, row) => sum + row.realized, 0);
+          groups.push({
+            key: `${product.id}|${segment.id}|agency`,
+            mode: 'agency',
+            product,
+            segment,
+            parentManager: null,
+            parentLabel: 'Agência',
+            details: visibleRows,
+            managerIds: visibleRows.map(row => row.manager.id),
+            objective,
+            realized,
+            delta: realized - objective,
+            pct: commercialPct(objective, realized)
+          });
+        });
+      });
+
+      return groups.sort((a, b) => {
+        const ap = a.pct ?? -Infinity;
+        const bp = b.pct ?? -Infinity;
+        return bp - ap || b.realized - a.realized || byName(a.product, b.product) || byName(a.segment, b.segment);
+      });
+    }
+
+    function renderCommercialFilterGroup(containerId, type, items) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      const selected = commercialUi.filters[type];
+      const allSelected = selected.size === 0;
+      container.innerHTML = `
+        <button class="filter-chip ${allSelected ? 'selected' : ''}" data-filter-type="${type}" data-filter-id="__all__">Todos</button>
+        ${items.sort(byName).map(item => `
+          <button class="filter-chip ${selected.has(item.id) ? 'selected' : ''}" data-filter-type="${type}" data-filter-id="${esc(item.id)}">${esc(item.name)}</button>
+        `).join('')}`;
+    }
+
+    function renderCommercialFilters() {
+      cleanCommercialUiSelections();
+      const data = commercialData();
+      renderCommercialFilterGroup('commercialProductFilters', 'products', [...data.products]);
+      renderCommercialFilterGroup('commercialSegmentFilters', 'segments', [...data.segments]);
+      renderCommercialFilterGroup('commercialManagerFilters', 'managers', [...data.managers]);
+      renderCommercialFilterGroup('commercialPriorityProductFilters', 'products', [...data.products]);
+      renderCommercialFilterGroup('commercialPrioritySegmentFilters', 'segments', [...data.segments]);
+      renderCommercialFilterGroup('commercialPriorityManagerFilters', 'managers', [...data.managers]);
+    }
+
+    function renderCommercialDashboard() {
+      const groups = currentCommercialGroups();
+      const body = document.getElementById('commercialSummaryBody');
+      if (!body) return;
+      const managerCount = new Set(groups.flatMap(group => group.managerIds || [])).size;
+      const activeFilterCount = Object.values(commercialUi.filters).reduce((sum, set) => sum + set.size, 0);
+      const singleManagerMode = commercialUi.filters.managers.size === 1;
+      document.getElementById('commercialFilterSummary').textContent =
+        `${groups.length} resultado(s) · ${managerCount} gerente(s)${singleManagerMode ? ' · visão individual' : ''}${activeFilterCount ? ` · ${activeFilterCount} filtro(s) selecionado(s)` : ''}`;
+
+      if (!groups.length) {
+        body.innerHTML = '<tr><td colspan="9" class="commercial-empty">Nenhum lançamento corresponde aos filtros. Digite Objetivo ou Realizado no F-LOG.</td></tr>';
+        return;
+      }
+
+      const rows = [];
+      groups.forEach((group, groupIndex) => {
+        const expandable = group.mode !== 'single' && group.details.length > 0;
+        const expanded = expandable && commercialUi.expanded.has(group.key);
+        const pctText = group.pct === null ? '—' : fmtPct(group.pct, 0);
+        const deltaClass = group.delta < 0 ? 'negative' : group.delta > 0 ? 'positive' : 'zero';
+        const rowClass = group.mode === 'single' ? 'single-manager-row' : 'group-row';
+        const keyAttrs = expandable ? `data-group-key="${esc(group.key)}" aria-expanded="${expanded}"` : '';
+        const toggle = expandable
+          ? `<button class="expand-btn" data-group-key="${esc(group.key)}" title="${expanded ? 'Recolher' : 'Expandir'}">${expanded ? '−' : '+'}</button>`
+          : '<span class="no-expand"></span>';
+        rows.push(`
+          <tr class="${rowClass}" ${keyAttrs}>
+            <td>${toggle}</td>
+            <td>${groupIndex + 1}</td>
+            <td>${esc(group.product.name)}</td>
+            <td>${esc(group.segment.name)}</td>
+            <td>${esc(group.parentLabel)}</td>
+            <td class="num">${fmtCommercial(group.objective)}</td>
+            <td class="num">${fmtCommercial(group.realized)}</td>
+            <td class="num ${deltaClass}">${fmtCommercialDelta(group.delta)}</td>
+            <td class="num pct-cell">${pctText}</td>
+          </tr>`);
+        if (expanded) {
+          group.details.forEach((detail, detailIndex) => {
+            const detailPct = detail.pct === null ? '—' : fmtPct(detail.pct, 0);
+            const detailDeltaClass = detail.delta < 0 ? 'negative' : detail.delta > 0 ? 'positive' : 'zero';
+            rows.push(`
+              <tr class="detail-row">
+                <td></td>
+                <td>${groupIndex + 1}.${detailIndex + 1}</td>
+                <td class="detail-marker">↳</td>
+                <td>${esc(group.segment.name)}</td>
+                <td>${esc(detail.manager.name)}</td>
+                <td class="num">${fmtCommercial(detail.objective)}</td>
+                <td class="num">${fmtCommercial(detail.realized)}</td>
+                <td class="num ${detailDeltaClass}">${fmtCommercialDelta(detail.delta)}</td>
+                <td class="num pct-cell">${detailPct}</td>
+              </tr>`);
+          });
+        }
+      });
+      body.innerHTML = rows.join('');
+    }
+
+    function renderCommercialManagerSelector() {
+      cleanCommercialUiSelections();
+      const data = commercialData();
+      const select = document.getElementById('commercialManagerSelect');
+      const segmentSelect = document.getElementById('newCommercialManagerSegment');
+      if (select) {
+        const managers = [...data.managers].sort(byName);
+        select.innerHTML = managers.length
+          ? managers.map(manager => `<option value="${esc(manager.id)}" ${manager.id === commercialUi.selectedManagerId ? 'selected' : ''}>${esc(manager.name)}</option>`).join('')
+          : '<option value="">Cadastre um gerente</option>';
+        select.disabled = !managers.length;
+      }
+      if (segmentSelect) {
+        const current = segmentSelect.value;
+        const segments = [...data.segments].sort(byName);
+        segmentSelect.innerHTML = segments.length
+          ? `<option value="">Selecione o segmento</option>${segments.map(segment => `<option value="${esc(segment.id)}">${esc(segment.name)}</option>`).join('')}`
+          : '<option value="">Cadastre um segmento</option>';
+        if (segments.some(x => x.id === current)) segmentSelect.value = current;
+        segmentSelect.disabled = !segments.length;
+      }
+    }
+
+    function renderCommercialInput() {
+      cleanCommercialUiSelections();
+      const data = commercialData();
+      const manager = data.managers.find(x => x.id === commercialUi.selectedManagerId);
+      const info = document.getElementById('commercialSelectedManagerInfo');
+      const body = document.getElementById('commercialInputBody');
+      if (!info || !body) return;
+      if (!manager) {
+        info.innerHTML = '<span class="hint">Cadastre um gerente para iniciar os lançamentos.</span>';
+        body.innerHTML = '<tr><td colspan="4" class="commercial-empty">Nenhum gerente cadastrado.</td></tr>';
+        return;
+      }
+      const segment = data.segments.find(x => x.id === manager.segmentId);
+      info.innerHTML = `<strong>${esc(manager.name)}</strong><span class="hint">Segmento: ${esc(segment?.name || 'Não definido')}</span>`;
+      const productsList = [...data.products].filter(x => String(x.name || '').trim()).sort(byName);
+      if (!productsList.length) {
+        body.innerHTML = '<tr><td colspan="4" class="commercial-empty">Cadastre um produto.</td></tr>';
+        return;
+      }
+      body.innerHTML = productsList.map(product => {
+        const entry = commercialEntry(manager.id, product.id, false);
+        const objective = entry?.objective ?? '';
+        const realized = entry?.realized ?? '';
+        const pct = commercialPct(objective, realized);
+        return `<tr data-manager-id="${esc(manager.id)}" data-product-id="${esc(product.id)}">
+          <td><strong>${esc(product.name)}</strong></td>
+          <td><input data-entry-field="objective" class="commercial-money-input" type="text" inputmode="decimal" autocomplete="off" value="${objective === '' ? '' : esc(fmtCommercial(objective))}" placeholder="0,00" /></td>
+          <td><input data-entry-field="realized" class="commercial-money-input" type="text" inputmode="decimal" autocomplete="off" value="${realized === '' ? '' : esc(fmtCommercial(realized))}" placeholder="0,00" /></td>
+          <td class="num pct-cell entry-pct">${pct === null ? '—' : fmtPct(pct, 0)}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    function renderCommercialConfig() {
+      const data = commercialData();
+      const productsBody = document.querySelector('#commercialProductsTable tbody');
+      const segmentsBody = document.querySelector('#commercialSegmentsTable tbody');
+      const managersBody = document.querySelector('#commercialManagersTable tbody');
+      if (!productsBody || !segmentsBody || !managersBody) return;
+      productsBody.innerHTML = [...data.products].sort(byName).map(product => `
+        <tr data-id="${esc(product.id)}">
+          <td><input data-commercial-name="product" type="text" value="${esc(product.name)}" /></td>
+          <td style="text-align:center"><label class="priority-product-check"><input data-commercial-product-priority type="checkbox" ${product.isPriority ? 'checked' : ''} /><span>Sim</span></label></td>
+          <td class="action-cell"><button class="icon-btn delete-commercial-product" title="Excluir">×</button></td>
+        </tr>`).join('') || '<tr><td colspan="3" class="commercial-empty">Nenhum produto.</td></tr>';
+      segmentsBody.innerHTML = [...data.segments].sort(byName).map(segment => `
+        <tr data-id="${esc(segment.id)}">
+          <td><input data-commercial-name="segment" type="text" value="${esc(segment.name)}" /></td>
+          <td class="action-cell"><button class="icon-btn delete-commercial-segment" title="Excluir">×</button></td>
+        </tr>`).join('') || '<tr><td colspan="2" class="commercial-empty">Nenhum segmento.</td></tr>';
+      const segmentOptions = [...data.segments].sort(byName);
+      managersBody.innerHTML = [...data.managers].sort(byName).map(manager => `
+        <tr data-id="${esc(manager.id)}">
+          <td><input data-commercial-name="manager" type="text" value="${esc(manager.name)}" /></td>
+          <td><select data-commercial-manager-segment>${segmentOptions.map(segment => `<option value="${esc(segment.id)}" ${segment.id === manager.segmentId ? 'selected' : ''}>${esc(segment.name)}</option>`).join('')}</select></td>
+          <td style="text-align:center"><label class="parent-check-wrap"><input data-commercial-manager-parent type="checkbox" ${manager.isParent ? 'checked' : ''} /><span>Mãe</span></label></td>
+          <td class="action-cell"><button class="icon-btn delete-commercial-manager" title="Excluir">×</button></td>
+        </tr>`).join('') || '<tr><td colspan="4" class="commercial-empty">Nenhum gerente.</td></tr>';
+    }
+
+    function renderCommercialViews() {
+      document.querySelectorAll('.commercial-view').forEach(view => view.classList.toggle('active', view.id === commercialUi.view));
+      document.querySelectorAll('.commercial-subtab').forEach(btn => btn.classList.toggle('active', btn.dataset.commercialView === commercialUi.view));
+    }
+
+    function renderCommercialAll() {
+      renderCommercialViews();
+      renderScores();
+      renderCommercialFilters();
+      renderCommercialDashboard();
+      renderCommercialPriorities();
+      renderCommercialManagerSelector();
+      renderCommercialInput();
+      renderCommercialConfig();
+    }
+
+    function commercialNameExists(collection, name, exceptId = '') {
+      const normalized = String(name || '').trim().toLocaleLowerCase('pt-BR');
+      return collection.some(item => item.id !== exceptId && String(item.name || '').trim().toLocaleLowerCase('pt-BR') === normalized);
+    }
+
+    function addCommercialProduct() {
+      const input = document.getElementById('newCommercialProductName');
+      const name = String(input.value || '').trim();
+      const data = commercialData();
+      if (!name) return alert('Informe o nome do produto.');
+      if (commercialNameExists(data.products, name)) return alert('Já existe um produto com esse nome.');
+      data.products.push({ id: makeId(), name, isPriority: false });
+      input.value = '';
+      saveState();
+      renderCommercialAll();
+    }
+
+    function addCommercialSegment() {
+      const input = document.getElementById('newCommercialSegmentName');
+      const name = String(input.value || '').trim();
+      const data = commercialData();
+      if (!name) return alert('Informe o nome do segmento.');
+      if (commercialNameExists(data.segments, name)) return alert('Já existe um segmento com esse nome.');
+      data.segments.push({ id: makeId(), name });
+      input.value = '';
+      saveState();
+      renderCommercialAll();
+    }
+
+    function addCommercialManager() {
+      const nameInput = document.getElementById('newCommercialManagerName');
+      const segmentSelect = document.getElementById('newCommercialManagerSegment');
+      const name = String(nameInput.value || '').trim();
+      const segmentId = segmentSelect.value;
+      const data = commercialData();
+      if (!name) return alert('Informe o nome do gerente.');
+      if (!segmentId || !data.segments.some(x => x.id === segmentId)) return alert('Selecione o segmento do gerente.');
+      if (commercialNameExists(data.managers, name)) return alert('Já existe um gerente com esse nome.');
+      const manager = { id: makeId(), name, segmentId, isParent: false };
+      data.managers.push(manager);
+      commercialUi.selectedManagerId = manager.id;
+      nameInput.value = '';
+      saveState();
+      renderCommercialAll();
+    }
+
+    function updateCommercialName(type, id, rawName, input) {
+      const data = commercialData();
+      const collection = type === 'product' ? data.products : type === 'segment' ? data.segments : data.managers;
+      const item = collection.find(x => x.id === id);
+      if (!item) return;
+      const name = String(rawName || '').trim();
+      if (!name) {
+        input.value = item.name;
+        return alert('O nome não pode ficar vazio.');
+      }
+      if (commercialNameExists(collection, name, id)) {
+        input.value = item.name;
+        return alert('Já existe outro item com esse nome.');
+      }
+      item.name = name;
+      input.value = name;
+      saveState();
+      renderCommercialFilters();
+      renderCommercialDashboard();
+      renderCommercialPriorities();
+      renderCommercialManagerSelector();
+      renderCommercialInput();
+      if (type === 'manager') renderScores();
+    }
+
+    function setCommercialEntry(managerId, productId, field, rawValue, row) {
+      const entry = commercialEntry(managerId, productId, true);
+      entry[field] = commercialNumberOrBlank(rawValue);
+      const objective = toNumber(entry.objective);
+      const realized = toNumber(entry.realized);
+      const pct = commercialPct(objective, realized);
+      const pctCell = row.querySelector('.entry-pct');
+      if (pctCell) pctCell.textContent = pct === null ? '—' : fmtPct(pct, 0);
+      saveState();
+      renderCommercialDashboard();
+      renderCommercialPriorities();
+    }
+
+    function exportCommercialCsv() {
+      const groups = currentCommercialGroups();
+      const rows = [['Nível','Produto','Segmento','Gerente','Objetivo','Realizado','Déficit','%']];
+      groups.forEach(group => {
+        const level = group.mode === 'single' ? 'Gerente' : group.mode === 'mother' ? 'Gerente mãe' : 'Agência';
+        rows.push([level, group.product.name, group.segment.name, group.parentLabel, group.objective, group.realized, group.delta, group.pct ?? '']);
+        group.details.forEach(detail => rows.push(['Gerente', group.product.name, group.segment.name, detail.manager.name, detail.objective, detail.realized, detail.delta, detail.pct ?? '']));
+      });
+      const csv = '\uFEFF' + rows.map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(';')).join('\r\n');
+      download('gestao-comercial.csv', csv, 'text/csv;charset=utf-8');
+    }
+
+
+    function renderAll() {
+      renderScores();
+      renderReferences();
+      renderManagers();
+      renderReport();
+      renderCommercialAll();
+    }
+
+    function updateCollection(collection, id, field, value) {
+      const row = state[collection].find(x => x.id === id);
+      if (!row) return;
+      row[field] = ['name','date'].includes(field) ? value : numberOrBlank(value);
+      saveState();
+      if (collection === 'scores') renderBarChart(field === 'informed' ? 'informedChart' : 'currentChart', field === 'informed' ? 'informed' : 'current', field === 'informed');
+      renderReport();
+      if (collection === 'references') renderCommercialPriorities();
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+
+    document.getElementById('groupTitle').addEventListener('input', e => {
+      state.groupTitle = e.target.value; saveState();
+      document.querySelectorAll('.chart-title')[0].textContent = `Pontuação — ${state.groupTitle || 'Grupo'}`;
+      document.querySelectorAll('.chart-title')[1].textContent = `Informado — ${state.groupTitle || 'Grupo'}`;
+    });
+
+    document.querySelector('#scoreTable tbody').addEventListener('input', e => {
+      const tr = e.target.closest('tr'); if (!tr || !e.target.dataset.field) return;
+      updateCollection('scores', tr.dataset.id, e.target.dataset.field, e.target.value);
+    });
+
+    document.querySelector('#refTable tbody').addEventListener('input', e => {
+      const tr = e.target.closest('tr'); if (!tr || !e.target.dataset.field) return;
+      updateCollection('references', tr.dataset.id, e.target.dataset.field, e.target.value);
+    });
+    document.querySelector('#refTable tbody').addEventListener('click', e => {
+      if (!e.target.classList.contains('delete-ref')) return;
+      const id = e.target.closest('tr').dataset.id; state.references = state.references.filter(x => x.id !== id); saveState(); renderReferences(); renderReport(); renderCommercialPriorities();
+    });
+    document.getElementById('addRefRowBtn').addEventListener('click', () => {
+      state.references.push({ id: makeId(), date: '', card: '', previdencia: '', varejo: '', prime: '' }); saveState(); renderReferences();
+    });
+
+    document.getElementById('analysisDate').addEventListener('input', e => { state.analysisDate = e.target.value; saveState(); renderReport(); renderCommercialPriorities(); });
+    document.querySelector('#managerTable tbody').addEventListener('input', e => {
+      const tr = e.target.closest('tr'); if (!tr || !e.target.dataset.field) return;
+      updateCollection('managers', tr.dataset.id, e.target.dataset.field, e.target.value);
+    });
+    document.querySelector('#managerTable tbody').addEventListener('click', e => {
+      if (!e.target.classList.contains('delete-manager')) return;
+      const id = e.target.closest('tr').dataset.id; state.managers = state.managers.filter(x => x.id !== id); saveState(); renderManagers(); renderReport();
+    });
+    document.getElementById('addManagerBtn').addEventListener('click', () => {
+      state.managers.push({ id: makeId(), name: '', cardObj: '', cardReal: '', prevObj: '', prevReal: '', varejoObj: '', varejoReal: '', primeObj: '', primeReal: '' }); saveState(); renderManagers();
+    });
+
+
+
+    document.querySelectorAll('.commercial-subtab').forEach(btn => btn.addEventListener('click', () => {
+      commercialUi.view = btn.dataset.commercialView;
+      renderCommercialViews();
+      if (commercialUi.view === 'commercialScoreView') renderScores();
+      if (commercialUi.view === 'commercialDashboardView') renderCommercialDashboard();
+      if (commercialUi.view === 'commercialPriorityView') { renderCommercialFilters(); renderCommercialPriorities(); }
+      if (commercialUi.view === 'commercialInputView') { renderCommercialManagerSelector(); renderCommercialInput(); }
+      if (commercialUi.view === 'commercialConfigView') renderCommercialConfig();
+      if (commercialUi.view === 'commercialReferencesView') renderReferences();
+    }));
+
+    document.getElementById('commercialPanel').addEventListener('click', event => {
+      const filter = event.target.closest('[data-filter-type]');
+      if (filter) {
+        const type = filter.dataset.filterType;
+        const id = filter.dataset.filterId;
+        const set = commercialUi.filters[type];
+        if (id === '__all__') set.clear();
+        else if (set.has(id)) set.delete(id);
+        else set.add(id);
+        commercialUi.expanded.clear();
+        renderCommercialFilters();
+        renderCommercialDashboard();
+        renderCommercialPriorities();
+        return;
+      }
+
+      const toggle = event.target.closest('.expand-btn');
+      const row = event.target.closest('.group-row[data-group-key]');
+      const key = toggle?.dataset.groupKey || row?.dataset.groupKey;
+      if (key) {
+        if (commercialUi.expanded.has(key)) commercialUi.expanded.delete(key);
+        else commercialUi.expanded.add(key);
+        renderCommercialDashboard();
+      }
+    });
+
+    document.getElementById('commercialClearFiltersBtn').addEventListener('click', () => {
+      Object.values(commercialUi.filters).forEach(set => set.clear());
+      renderCommercialFilters();
+      renderCommercialDashboard();
+      renderCommercialPriorities();
+    });
+    document.getElementById('commercialPriorityClearFiltersBtn').addEventListener('click', () => {
+      Object.values(commercialUi.filters).forEach(set => set.clear());
+      renderCommercialFilters();
+      renderCommercialDashboard();
+      renderCommercialPriorities();
+    });
+    document.getElementById('commercialExpandAllBtn').addEventListener('click', () => {
+      currentCommercialGroups().filter(group => group.details.length > 0 && group.mode !== 'single').forEach(group => commercialUi.expanded.add(group.key));
+      renderCommercialDashboard();
+    });
+    document.getElementById('commercialCollapseAllBtn').addEventListener('click', () => {
+      commercialUi.expanded.clear();
+      renderCommercialDashboard();
+    });
+    document.getElementById('commercialCsvBtn').addEventListener('click', exportCommercialCsv);
+
+    document.getElementById('commercialPriorityDate').addEventListener('change', event => {
+      const validDates = commercialPriorityReferenceDates();
+      if (!validDates.includes(event.target.value)) return;
+      state.analysisDate = event.target.value;
+      const globalDate = document.getElementById('analysisDate');
+      if (globalDate) globalDate.value = state.analysisDate;
+      saveState();
+      renderReport();
+      renderCommercialPriorities();
+    });
+
+    document.getElementById('commercialManagerSelect').addEventListener('change', event => {
+      commercialUi.selectedManagerId = event.target.value;
+      renderCommercialInput();
+    });
+
+    document.getElementById('commercialInputBody').addEventListener('input', event => {
+      const input = event.target.closest('[data-entry-field]');
+      const row = event.target.closest('tr[data-manager-id][data-product-id]');
+      if (!input || !row) return;
+      setCommercialEntry(row.dataset.managerId, row.dataset.productId, input.dataset.entryField, input.value, row);
+    });
+
+    document.getElementById('commercialInputBody').addEventListener('focusout', event => {
+      const input = event.target.closest('[data-entry-field]');
+      if (!input) return;
+      const parsed = commercialNumberOrBlank(input.value);
+      input.value = parsed === '' ? '' : fmtCommercial(parsed);
+    });
+
+    document.getElementById('commercialInputBody').addEventListener('focusin', event => {
+      const input = event.target.closest('[data-entry-field]');
+      if (!input) return;
+      // Mantém o padrão brasileiro visível e seleciona o conteúdo para facilitar a substituição.
+      requestAnimationFrame(() => input.select());
+    });
+
+    document.getElementById('addCommercialProductBtn').addEventListener('click', addCommercialProduct);
+    document.getElementById('addCommercialSegmentBtn').addEventListener('click', addCommercialSegment);
+    document.getElementById('addCommercialManagerBtn').addEventListener('click', addCommercialManager);
+    ['newCommercialProductName','newCommercialSegmentName','newCommercialManagerName'].forEach(id => {
+      document.getElementById(id).addEventListener('keydown', event => {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+        if (id === 'newCommercialProductName') addCommercialProduct();
+        else if (id === 'newCommercialSegmentName') addCommercialSegment();
+        else addCommercialManager();
+      });
+    });
+
+    document.getElementById('commercialConfigView').addEventListener('change', event => {
+      const priorityCheck = event.target.closest('[data-commercial-product-priority]');
+      if (priorityCheck) {
+        const row = priorityCheck.closest('tr[data-id]');
+        const product = commercialData().products.find(item => item.id === row.dataset.id);
+        if (!product) return;
+        product.isPriority = priorityCheck.checked;
+        saveState();
+        renderCommercialConfig();
+        renderCommercialFilters();
+        renderCommercialDashboard();
+        renderCommercialPriorities();
+        return;
+      }
+
+      const parentCheck = event.target.closest('[data-commercial-manager-parent]');
+      if (parentCheck) {
+        const row = parentCheck.closest('tr[data-id]');
+        const data = commercialData();
+        const manager = data.managers.find(x => x.id === row.dataset.id);
+        if (!manager) return;
+        if (parentCheck.checked) {
+          data.managers.forEach(item => {
+            if (item.segmentId === manager.segmentId) item.isParent = item.id === manager.id;
+          });
+        } else {
+          manager.isParent = false;
+        }
+        saveState();
+        renderCommercialConfig();
+        renderCommercialDashboard();
+        renderCommercialPriorities();
+        return;
+      }
+
+      const nameInput = event.target.closest('[data-commercial-name]');
+      if (nameInput) {
+        const row = nameInput.closest('tr[data-id]');
+        updateCommercialName(nameInput.dataset.commercialName, row.dataset.id, nameInput.value, nameInput);
+        return;
+      }
+      const segmentSelect = event.target.closest('[data-commercial-manager-segment]');
+      if (segmentSelect) {
+        const row = segmentSelect.closest('tr[data-id]');
+        const manager = commercialData().managers.find(x => x.id === row.dataset.id);
+        if (!manager) return;
+        manager.segmentId = segmentSelect.value;
+        if (manager.isParent) {
+          commercialData().managers.forEach(item => {
+            if (item.segmentId === manager.segmentId) item.isParent = item.id === manager.id;
+          });
+        }
+        saveState();
+        renderCommercialConfig();
+        renderCommercialDashboard();
+        renderCommercialPriorities();
+        renderCommercialManagerSelector();
+        renderCommercialInput();
+      }
+    });
+
+    document.getElementById('commercialConfigView').addEventListener('click', event => {
+      const row = event.target.closest('tr[data-id]');
+      if (!row) return;
+      const data = commercialData();
+      const id = row.dataset.id;
+      if (event.target.closest('.delete-commercial-product')) {
+        const product = data.products.find(x => x.id === id);
+        if (!product || !confirm(`Excluir o produto "${product.name}" e todos os seus lançamentos?`)) return;
+        data.products = data.products.filter(x => x.id !== id);
+        data.entries = data.entries.filter(x => x.productId !== id);
+      } else if (event.target.closest('.delete-commercial-segment')) {
+        const segment = data.segments.find(x => x.id === id);
+        if (!segment) return;
+        if (data.managers.some(x => x.segmentId === id)) return alert('Este segmento ainda possui gerentes. Mova ou exclua os gerentes antes de excluir o segmento.');
+        if (!confirm(`Excluir o segmento "${segment.name}"?`)) return;
+        data.segments = data.segments.filter(x => x.id !== id);
+      } else if (event.target.closest('.delete-commercial-manager')) {
+        const manager = data.managers.find(x => x.id === id);
+        if (!manager || !confirm(`Excluir o gerente "${manager.name}" e todos os seus lançamentos?`)) return;
+        data.managers = data.managers.filter(x => x.id !== id);
+        data.entries = data.entries.filter(x => x.managerId !== id);
+        if (commercialUi.selectedManagerId === id) commercialUi.selectedManagerId = '';
+      } else return;
+      syncScoresWithCommercialManagers();
+      saveState();
+      renderCommercialAll();
+    });
+
+
+    function download(name, content, mime) {
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = name; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+    document.getElementById('exportJsonBtn').addEventListener('click', () => download('painel-gestao-dados.json', JSON.stringify(state, null, 2), 'application/json;charset=utf-8'));
+    document.getElementById('importJsonBtn').addEventListener('click', () => document.getElementById('importFile').click());
+    document.getElementById('importFile').addEventListener('change', async e => {
+      const file = e.target.files[0]; if (!file) return;
+      try {
+        const parsed = JSON.parse(await file.text());
+        if (!parsed.scores || !parsed.references || !parsed.managers) throw new Error('Formato inválido');
+        state = normalizeState(parsed); saveState(); renderAll(); toast('Dados importados.');
+      } catch { alert('O arquivo não contém dados válidos deste aplicativo.'); }
+      e.target.value = '';
+    });
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      if (!confirm('Restaurar o modelo inicial? Os dados atuais serão substituídos.')) return;
+      state = defaultState(); saveState(); renderAll(); toast('Modelo restaurado.');
+    });
+
+    document.getElementById('csvBtn').addEventListener('click', () => {
+      const { rows } = buildReportRows();
+      const headers = ['Gerente','Entrega','Objetivo','Realizado','% realizado','% referência','Meta até a data','Falta em valor','Falta em p.p.','Status'];
+      const data = rows.map(r => [r.manager,r.product,fmt(r.objective),fmt(r.realized),r.realizedPct===null?'':fmt(r.realizedPct),r.refPct===null?'':fmt(r.refPct),r.target===null?'':fmt(r.target),r.missingValue===null?'':fmt(r.missingValue),r.missingPp===null?'':fmt(r.missingPp),r.status]);
+      const csv = '\uFEFF' + [headers, ...data].map(row => row.map(v => `"${String(v).replace(/"/g,'""')}"`).join(';')).join('\r\n');
+      download(`relatorio-entregas-${state.analysisDate || 'sem-data'}.csv`, csv, 'text/csv;charset=utf-8');
+    });
+    document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden' && pendingChanges) persistState();
+    });
+    window.addEventListener('beforeunload', () => {
+      if (currentUser) writeLocalCache(currentUser.uid, JSON.stringify(state));
+      if (pendingChanges) persistState();
+    });
+    window.addEventListener('storage', event => {
+      if (!currentUser || event.key !== userStorageKey(currentUser.uid) || !event.newValue || pendingChanges) return;
+      try {
+        state = normalizeState(JSON.parse(event.newValue));
+        lastSavedJson = event.newValue;
+        renderAll();
+        setSyncStatus('Atualizado por outra aba', 'ok');
+      } catch {}
+    });
+
+    document.getElementById('loginTabBtn').addEventListener('click', () => setAuthMode('login'));
+    document.getElementById('registerTabBtn').addEventListener('click', () => setAuthMode('register'));
+
+    document.getElementById('authForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value;
+      const confirmation = document.getElementById('authPasswordConfirm').value;
+
+      if (!email) return setAuthMessage('Digite seu e-mail.', 'error');
+      if (password.length < 6) return setAuthMessage('A senha precisa ter pelo menos 6 caracteres.', 'error');
+      if (authMode === 'register' && password !== confirmation) return setAuthMessage('As senhas não são iguais.', 'error');
+
+      setAuthBusy(true);
+      setAuthMessage(authMode === 'register' ? 'Criando sua conta...' : 'Entrando...');
+      try {
+        if (authMode === 'register') {
+          await createUserWithEmailAndPassword(auth, email, password);
+        } else {
+          await signInWithEmailAndPassword(auth, email, password);
+        }
+      } catch (error) {
+        setAuthMessage(authErrorMessage(error), 'error');
+        setAuthBusy(false);
+      }
+    });
+
+    document.getElementById('forgotPasswordBtn').addEventListener('click', async () => {
+      const email = document.getElementById('authEmail').value.trim();
+      if (!email) return setAuthMessage('Digite seu e-mail para receber a recuperação de senha.', 'error');
+      setAuthBusy(true);
+      try {
+        await sendPasswordResetEmail(auth, email);
+        setAuthMessage('E-mail de recuperação enviado. Verifique também a caixa de spam.', 'ok');
+      } catch (error) {
+        setAuthMessage(authErrorMessage(error), 'error');
+      } finally {
+        setAuthBusy(false);
+      }
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      try {
+        if (pendingChanges) await persistState();
+        await signOut(auth);
+      } catch (error) {
+        toast('Não foi possível sair agora.');
+      }
+    });
+
+    (async function initFirebaseAuth() {
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+        setAuthMode('login');
+        onAuthStateChanged(auth, user => {
+          if (user) handleSignedInUser(user);
+          else handleSignedOutUser();
+        });
+      } catch (error) {
+        console.error('Falha ao inicializar o Firebase:', error);
+        document.getElementById('authLoading').hidden = true;
+        document.getElementById('authContent').hidden = false;
+        setAuthMessage('Falha ao conectar ao Firebase. Abra este arquivo por um endereço HTTPS do Firebase Hosting.', 'error');
+      }
+    })();
+  </script>
+</body>
+</html>
