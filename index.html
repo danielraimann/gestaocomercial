@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Painel Comercial" />
   <title>Painel de Gestão Comercial</title>
-  <script type="text/javascript" src="https://me.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=Pfajw-UsHXraiHU6JRjriYIjMSZaVrG35F1Hk5E62IzYvSyG6NTA5zIB_dIm0TxdVY7J65qeIY-GkFMK-slwNBE50m0IMNXORKLNmR0zk_y3bHA0no3yvqelpx108qJ51brVn70ZA6wc_uMWNKRorEbNacgVoERRzyo9fi3oatmNPcfYdVwUAX81XFkxDZjzzP1klnamXhdonfpzaYDnfpxgjFNXfrdy6h4ttzUO4JzNAHQl9t4TlwszO0LPyq-6dtiiPbW24MrWsGUP5txmzPuFxWkyz5hf-Pd8CRq7ojCvfgpZ-78TZT6vMKA1sjaLzvm11Af_KuqhAlMC-uGvyA" charset="UTF-8"></script><style>
+  <script type="text/javascript" src="https://me.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=kJVEprBqDE_vB9B-3TgEyHxUWtRs_wnKqFfYPXK68Fg1K1Oc9juzi3TrQXkDUftw45cVo2c5hOsEF9je5TNPfdf9_LCoNBWxDchdbIJvsjor8cw46lru4Z4h-L4ZesDbY2YqlvyqwIxDx-a--QrHK_ypo_qtIbVkPRZ5wD1E3O4C6S2h9MFaQ-mQ2ohhijpC5gZ1w5LGDc8pEfGe91qim08DVyhvGWy7kB1ztOccb7UjC-7LDFEE7yh2G8390DSJpwlqwCYbyTJMFDY47iWdgUpGLodC_m5LYnGMTO9zTdo_4BCCVgWKqEO3gzKsmXfJnUpz-H-Ftfcjc5zaq7AY-w" charset="UTF-8"></script><style>
     :root {
       --brand: #b51f2e;
       --brand-dark: #861522;
@@ -3575,31 +3575,39 @@
 
   <script>
     (() => {
-      const MOBILE_QUERY = '(max-width: 760px)';
-      const mobileMedia = window.matchMedia(MOBILE_QUERY);
-      let enhancementPending = false;
+      const media = window.matchMedia('(max-width: 760px)');
+      let scheduled = false;
+      let appObserver = null;
 
-      const setAttr = (element, name, value) => {
-        if (element && element.getAttribute(name) !== String(value)) {
-          element.setAttribute(name, String(value));
+      function setAttr(element, name, value) {
+        if (!element) return;
+        const normalized = String(value);
+        if (element.getAttribute(name) !== normalized) {
+          element.setAttribute(name, normalized);
         }
-      };
+      }
 
-      function headerLabels(table) {
-        const rows = [...table.querySelectorAll('thead tr')];
-        const row = rows.at(-1);
+      function labelsFor(table) {
+        const rows = table.querySelectorAll('thead tr');
+        const row = rows.length ? rows[rows.length - 1] : null;
         if (!row) return [];
-        return [...row.querySelectorAll('th')].map(cell =>
+        return Array.from(row.querySelectorAll('th')).map(cell =>
           cell.textContent.replace(/\s+/g, ' ').trim()
         );
       }
 
       function enhanceTable(table) {
+        if (!media.matches) {
+          table.classList.remove('mobile-card-table');
+          return;
+        }
+
         table.classList.add('mobile-card-table');
-        const labels = headerLabels(table);
+        const labels = labelsFor(table);
 
         table.querySelectorAll('tbody tr').forEach(row => {
-          const cells = [...row.children].filter(cell => cell.tagName === 'TD');
+          const cells = Array.from(row.children).filter(cell => cell.tagName === 'TD');
+
           if (cells.length === 1 && cells[0].hasAttribute('colspan')) {
             setAttr(cells[0], 'data-label', '');
             return;
@@ -3611,33 +3619,57 @@
         });
       }
 
-      function accessibleButtons() {
-        document.querySelectorAll('.expand-btn').forEach(button => {
-          const expanded = button.closest('tr')?.getAttribute('aria-expanded') === 'true';
-          const label = expanded ? 'Recolher detalhes' : 'Expandir detalhes';
-          setAttr(button, 'aria-label', label);
-        });
+      function enhanceAccessibility() {
+        const tabList = document.querySelector('.commercial-subtabs');
+        if (tabList) {
+          setAttr(tabList, 'role', 'tablist');
+          setAttr(tabList, 'aria-label', 'Seções da gestão comercial');
 
-        const deleteLabels = [
-          ['.delete-commercial-product', 'Excluir produto'],
-          ['.delete-commercial-segment', 'Excluir segmento'],
-          ['.delete-commercial-manager', 'Excluir gerente']
-        ];
+          tabList.querySelectorAll('.commercial-subtab').forEach((tab, index) => {
+            const panelId = tab.dataset.commercialView;
+            const panel = panelId ? document.getElementById(panelId) : null;
+            const active = tab.classList.contains('active');
+            const tabId = tab.id || `commercialTab-${index}`;
 
-        deleteLabels.forEach(([selector, label]) => {
-          document.querySelectorAll(selector).forEach(button => setAttr(button, 'aria-label', label));
-        });
+            if (!tab.id) tab.id = tabId;
+            setAttr(tab, 'role', 'tab');
+            setAttr(tab, 'aria-selected', active);
+            setAttr(tab, 'tabindex', active ? '0' : '-1');
+            if (panelId) setAttr(tab, 'aria-controls', panelId);
 
-        document.querySelectorAll('.icon-btn[title="Excluir"]').forEach(button => {
-          if (!button.getAttribute('aria-label')) setAttr(button, 'aria-label', 'Excluir item');
-        });
+            if (panel) {
+              setAttr(panel, 'role', 'tabpanel');
+              setAttr(panel, 'aria-labelledby', tabId);
+            }
+          });
+        }
 
         document.querySelectorAll('.filter-chip').forEach(button => {
           setAttr(button, 'aria-pressed', button.classList.contains('selected'));
         });
+
+        document.querySelectorAll('.expand-btn').forEach(button => {
+          const expanded = button.closest('tr')?.getAttribute('aria-expanded') === 'true';
+          setAttr(button, 'aria-label', expanded ? 'Recolher detalhes' : 'Expandir detalhes');
+        });
+
+        document.querySelectorAll('.icon-btn[title="Excluir"]').forEach(button => {
+          if (!button.getAttribute('aria-label')) {
+            setAttr(button, 'aria-label', 'Excluir item');
+          }
+        });
+
+        const toast = document.getElementById('toast');
+        if (toast) {
+          setAttr(toast, 'role', 'status');
+          setAttr(toast, 'aria-live', 'polite');
+          setAttr(toast, 'aria-atomic', 'true');
+        }
       }
 
       function enhanceInputs() {
+        if (!media.matches) return;
+
         document.querySelectorAll(
           'input[type="number"], .commercial-money-input, #scoreTable input'
         ).forEach(input => {
@@ -3648,64 +3680,14 @@
         document.querySelectorAll('table td input, table td select').forEach(control => {
           const cell = control.closest('td');
           const label = cell?.dataset.label?.trim();
-          if (label && !control.getAttribute('aria-label')) setAttr(control, 'aria-label', label);
-        });
-      }
-
-      function enhanceTabs() {
-        const tabList = document.querySelector('.commercial-subtabs');
-        if (!tabList) return;
-
-        setAttr(tabList, 'role', 'tablist');
-        setAttr(tabList, 'aria-label', 'Seções da gestão comercial');
-
-        const tabs = [...tabList.querySelectorAll('.commercial-subtab')];
-        tabs.forEach((tab, index) => {
-          const panelId = tab.dataset.commercialView;
-          const panel = panelId ? document.getElementById(panelId) : null;
-          const active = tab.classList.contains('active');
-          const tabId = tab.id || `commercialTab-${index}`;
-
-          if (!tab.id) tab.id = tabId;
-          setAttr(tab, 'role', 'tab');
-          setAttr(tab, 'aria-selected', active);
-          setAttr(tab, 'tabindex', active ? '0' : '-1');
-          if (panelId) setAttr(tab, 'aria-controls', panelId);
-
-          if (panel) {
-            setAttr(panel, 'role', 'tabpanel');
-            setAttr(panel, 'aria-labelledby', tabId);
-            setAttr(panel, 'tabindex', '0');
-          }
-
-          if (active && mobileMedia.matches) {
-            tab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+          if (label && !control.getAttribute('aria-label')) {
+            setAttr(control, 'aria-label', label);
           }
         });
       }
 
-      function enhanceLiveRegions() {
-        const toast = document.getElementById('toast');
-        if (toast) {
-          setAttr(toast, 'role', 'status');
-          setAttr(toast, 'aria-live', 'polite');
-          setAttr(toast, 'aria-atomic', 'true');
-        }
-
-        const saveHint = document.getElementById('commercialSaveHint');
-        if (saveHint) {
-          setAttr(saveHint, 'role', 'status');
-          setAttr(saveHint, 'aria-live', 'polite');
-        }
-
-        const modal = document.getElementById('resetModal');
-        if (modal) {
-          setAttr(modal, 'aria-hidden', modal.hidden ? 'true' : 'false');
-        }
-      }
-
-      function runEnhancements() {
-        enhancementPending = false;
+      function enhance() {
+        scheduled = false;
 
         document.querySelectorAll([
           '#scoreTable',
@@ -3716,63 +3698,88 @@
           '#refTable'
         ].join(',')).forEach(enhanceTable);
 
-        accessibleButtons();
+        enhanceAccessibility();
         enhanceInputs();
-        enhanceTabs();
-        enhanceLiveRegions();
       }
 
-      function scheduleEnhancements() {
-        if (enhancementPending) return;
-        enhancementPending = true;
-        requestAnimationFrame(runEnhancements);
+      function scheduleEnhance() {
+        if (scheduled) return;
+        scheduled = true;
+        requestAnimationFrame(enhance);
       }
+
+      function observeAppOpening() {
+        const appShell = document.getElementById('appShell');
+        if (!appShell || appObserver) return;
+
+        appObserver = new MutationObserver(() => {
+          if (!appShell.hidden) {
+            scheduleEnhance();
+            appObserver.disconnect();
+            appObserver = null;
+          }
+        });
+
+        appObserver.observe(appShell, {
+          attributes: true,
+          attributeFilter: ['hidden']
+        });
+
+        if (!appShell.hidden) {
+          scheduleEnhance();
+          appObserver.disconnect();
+          appObserver = null;
+        }
+      }
+
+      document.addEventListener('click', event => {
+        if (event.target.closest(
+          '.commercial-subtab, .filter-chip, .expand-btn, .commercial-toolbar-actions button, .inline-create button, .icon-btn'
+        )) {
+          setTimeout(scheduleEnhance, 0);
+        }
+      }, { passive: true });
+
+      document.addEventListener('change', event => {
+        if (event.target.closest(
+          '#commercialManagerSelect, #commercialPriorityDate, .config-table, .commercial-input-table'
+        )) {
+          setTimeout(scheduleEnhance, 0);
+        }
+      }, { passive: true });
 
       document.addEventListener('keydown', event => {
         const current = event.target.closest?.('.commercial-subtab');
         if (!current) return;
 
-        const tabs = [...document.querySelectorAll('.commercial-subtab')];
+        const tabs = Array.from(document.querySelectorAll('.commercial-subtab'));
         const index = tabs.indexOf(current);
         if (index < 0) return;
 
-        let nextIndex = null;
-        if (event.key === 'ArrowRight') nextIndex = (index + 1) % tabs.length;
-        if (event.key === 'ArrowLeft') nextIndex = (index - 1 + tabs.length) % tabs.length;
-        if (event.key === 'Home') nextIndex = 0;
-        if (event.key === 'End') nextIndex = tabs.length - 1;
+        let next = null;
+        if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
+        if (event.key === 'ArrowLeft') next = (index - 1 + tabs.length) % tabs.length;
+        if (event.key === 'Home') next = 0;
+        if (event.key === 'End') next = tabs.length - 1;
 
-        if (nextIndex !== null) {
+        if (next !== null) {
           event.preventDefault();
-          tabs[nextIndex].focus();
-          tabs[nextIndex].click();
+          tabs[next].focus();
+          tabs[next].click();
         }
       });
 
-      document.addEventListener('click', event => {
-        if (
-          event.target.closest?.('.commercial-subtab, .filter-chip, .expand-btn, button')
-        ) {
-          setTimeout(scheduleEnhancements, 0);
-        }
-      });
+      media.addEventListener?.('change', scheduleEnhance);
 
-      const observer = new MutationObserver(scheduleEnhancements);
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true
-      });
-
-      const resetModal = document.getElementById('resetModal');
-      if (resetModal) {
-        const modalObserver = new MutationObserver(() => {
-          setAttr(resetModal, 'aria-hidden', resetModal.hidden ? 'true' : 'false');
-        });
-        modalObserver.observe(resetModal, { attributes: true, attributeFilter: ['hidden'] });
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+          observeAppOpening();
+          scheduleEnhance();
+        }, { once: true });
+      } else {
+        observeAppOpening();
+        scheduleEnhance();
       }
-
-      mobileMedia.addEventListener?.('change', scheduleEnhancements);
-      scheduleEnhancements();
     })();
   </script>
 
