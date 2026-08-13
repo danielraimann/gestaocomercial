@@ -3374,6 +3374,7 @@
 
     function parseCommercialNumber(value) {
       if (value === '' || value === null || value === undefined) return 0;
+      if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
       let text = String(value).trim();
       if (!text) return 0;
 
