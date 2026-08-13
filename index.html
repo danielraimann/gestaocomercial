@@ -3424,6 +3424,13 @@
       return fmtCommercial(n);
     }
 
+    function commercialManagersForSelectedSegments(data = commercialData()) {
+      const selectedSegments = commercialUi.filters.segments;
+      return data.managers.filter(manager =>
+        selectedSegments.size === 0 || selectedSegments.has(manager.segmentId)
+      );
+    }
+
     function cleanCommercialUiSelections() {
       const data = commercialData();
       const valid = {
@@ -3434,6 +3441,10 @@
       Object.keys(commercialUi.filters).forEach(key => {
         commercialUi.filters[key] = new Set([...commercialUi.filters[key]].filter(id => valid[key].has(id)));
       });
+      const availableManagerIds = new Set(commercialManagersForSelectedSegments(data).map(manager => manager.id));
+      commercialUi.filters.managers = new Set(
+        [...commercialUi.filters.managers].filter(id => availableManagerIds.has(id))
+      );
       if (!data.managers.some(x => x.id === commercialUi.selectedManagerId)) {
         commercialUi.selectedManagerId = [...data.managers].sort(byName)[0]?.id || '';
       }
@@ -3564,12 +3575,13 @@
     function renderCommercialFilters() {
       cleanCommercialUiSelections();
       const data = commercialData();
+      const availableManagers = commercialManagersForSelectedSegments(data);
       renderCommercialFilterGroup('commercialProductFilters', 'products', [...data.products]);
       renderCommercialFilterGroup('commercialSegmentFilters', 'segments', [...data.segments]);
-      renderCommercialFilterGroup('commercialManagerFilters', 'managers', [...data.managers]);
+      renderCommercialFilterGroup('commercialManagerFilters', 'managers', availableManagers);
       renderCommercialFilterGroup('commercialPriorityProductFilters', 'products', [...data.products]);
       renderCommercialFilterGroup('commercialPrioritySegmentFilters', 'segments', [...data.segments]);
-      renderCommercialFilterGroup('commercialPriorityManagerFilters', 'managers', [...data.managers]);
+      renderCommercialFilterGroup('commercialPriorityManagerFilters', 'managers', [...availableManagers]);
     }
 
     function commercialSelectedFilterNames(type) {
