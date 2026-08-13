@@ -606,6 +606,89 @@
       line-height: 1.04 !important;
     }
 
+    .focused-pdf-export {
+      position: fixed;
+      left: -30000px;
+      top: 0;
+      z-index: -1000;
+      width: 1240px;
+      box-sizing: border-box;
+      padding: 12px 14px 10px;
+      background: #fff;
+      color: #20242a;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    .focused-pdf-export, .focused-pdf-export * { box-sizing: border-box; }
+    .focused-pdf-title {
+      margin: 0;
+      color: var(--brand-dark);
+      font-size: 30px;
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -.02em;
+    }
+    .focused-pdf-subtitle {
+      margin: 5px 0 0;
+      color: #4a515a;
+      font-size: 17px;
+      font-weight: 800;
+      line-height: 1.15;
+    }
+    .focused-pdf-header {
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 3px solid var(--brand);
+    }
+    .score-pdf-export .charts-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .score-pdf-export .chart-card { padding: 12px; }
+    .score-pdf-export .chart-title { margin-bottom: 10px; font-size: 18px; }
+    .score-pdf-export .bar-row { grid-template-columns: 145px 1fr 60px; gap: 8px; }
+    .score-pdf-export .bar-label, .score-pdf-export .bar-value { font-size: 13px; }
+    .score-pdf-export .bar-track { height: 20px; }
+    .score-pdf-export .axis-row { grid-template-columns: 145px 1fr 60px; gap: 8px; font-size: 10px; }
+    .score-pdf-export .legend { justify-content: center; margin-top: 10px; font-size: 12px; }
+    .priority-pdf-meta {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .priority-pdf-date { color: #343a42; font-size: 15px; font-weight: 900; white-space: nowrap; }
+    .priority-pdf-export .commercial-pdf-export-filters { justify-content: flex-start; margin: 8px 0; }
+    .priority-pdf-export .table-wrap { overflow: visible; border: 0; border-radius: 0; }
+    .priority-pdf-export table {
+      display: table !important;
+      width: 100% !important;
+      min-width: 0 !important;
+      border-collapse: collapse !important;
+      table-layout: fixed !important;
+    }
+    .priority-pdf-export thead { display: table-header-group !important; position: static !important; }
+    .priority-pdf-export tbody { display: table-row-group !important; }
+    .priority-pdf-export tr { display: table-row !important; position: static !important; padding: 0 !important; }
+    .priority-pdf-export th, .priority-pdf-export td {
+      display: table-cell !important;
+      position: static !important;
+      width: auto !important;
+      min-width: 0 !important;
+      padding: 5px 5px !important;
+      border: 1px solid #b8bec6 !important;
+      font-size: 12px !important;
+      line-height: 1.1 !important;
+      vertical-align: middle !important;
+      overflow-wrap: anywhere !important;
+    }
+    .priority-pdf-export td::before { display: none !important; content: none !important; }
+    .priority-pdf-export th { background: #343a42 !important; color: #fff !important; text-align: center !important; }
+    .priority-pdf-export td { background: #fff !important; color: #252a31 !important; }
+    .priority-pdf-export .delivery-segment { display: block; color: #68707c; font-size: .88em; }
+    .priority-pdf-export .status { padding: 3px 5px; font-size: 10px; white-space: normal; }
+    .priority-pdf-export.pdf-density-dense th, .priority-pdf-export.pdf-density-dense td { padding: 3px 4px !important; font-size: 10.5px !important; }
+    .priority-pdf-export.pdf-density-ultra th, .priority-pdf-export.pdf-density-ultra td { padding: 2px 3px !important; font-size: 9px !important; line-height: 1.03 !important; }
+
     .commercial-input-table { min-width: 700px; }
     .commercial-input-table input { min-width: 150px; text-align: right; }
     .commercial-input-table .f-log-visibility-head,
@@ -2127,6 +2210,7 @@
                 <h3>Pontuação POBJ Produção</h3>
                 <p class="hint">Os gerentes são os mesmos cadastrados em Cadastros. Os gráficos são ordenados automaticamente do maior para o menor.</p>
               </div>
+              <button class="btn dark small no-print" id="scorePdfBtn" type="button">Gerar PDF</button>
             </div>
             <div class="field-row" style="margin-bottom:14px">
               <div class="field">
@@ -2240,6 +2324,7 @@
               <div class="commercial-summary" id="commercialPrioritySummary"></div>
               <div class="commercial-toolbar-actions">
                 <button class="btn dark small" id="commercialPriorityClearFiltersBtn">Limpar filtros</button>
+                <button class="btn dark small" id="commercialPriorityPdfBtn" type="button">Gerar PDF</button>
               </div>
             </div>
             <div class="table-wrap">
@@ -3613,6 +3698,196 @@
       return bestWidth;
     }
 
+    function pdfTimestamp() {
+      return new Intl.DateTimeFormat('pt-BR', {
+        dateStyle: 'short',
+        timeStyle: 'medium'
+      }).format(new Date());
+    }
+
+    function datedPdfFilename(prefix) {
+      const now = new Date();
+      const pad = value => String(value).padStart(2, '0');
+      return `${prefix}-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(now.getHours())}-${pad(now.getMinutes())}.pdf`;
+    }
+
+    async function saveFocusedPdf(stage, filename) {
+      await ensureCommercialPdfLibraries();
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4',
+        compress: true,
+        putOnlyUsedFonts: true
+      });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const marginX = 3;
+      const marginTop = 3;
+      const footerHeight = 5.5;
+      const footerY = pageHeight - 2.3;
+      const availableWidth = pageWidth - marginX * 2;
+      const availableHeight = pageHeight - marginTop - footerHeight - 1.5;
+
+      if (document.fonts?.ready) await document.fonts.ready;
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      calibrateCommercialPdfStage(stage, availableWidth / availableHeight);
+      await new Promise(resolve => requestAnimationFrame(resolve));
+
+      const canvas = await window.html2canvas(stage, {
+        backgroundColor: '#ffffff',
+        scale: window.innerWidth <= 760 ? 2.25 : 2.8,
+        useCORS: true,
+        logging: false,
+        removeContainer: false,
+        width: stage.scrollWidth,
+        height: stage.scrollHeight,
+        windowWidth: stage.scrollWidth,
+        windowHeight: stage.scrollHeight,
+        scrollX: 0,
+        scrollY: 0
+      });
+
+      const fitScale = Math.min(availableWidth / canvas.width, availableHeight / canvas.height);
+      const imageWidth = canvas.width * fitScale;
+      const imageHeight = canvas.height * fitScale;
+      pdf.addImage(
+        canvas.toDataURL('image/png'),
+        'PNG',
+        (pageWidth - imageWidth) / 2,
+        marginTop,
+        imageWidth,
+        imageHeight,
+        undefined,
+        'FAST'
+      );
+
+      pdf.setDrawColor(181, 31, 46);
+      pdf.setLineWidth(0.35);
+      pdf.line(marginX, pageHeight - footerHeight, pageWidth - marginX, pageHeight - footerHeight);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(7.5);
+      pdf.setTextColor(75, 82, 92);
+      pdf.text(`Impresso em ${pdfTimestamp()}`, pageWidth - marginX, footerY, { align: 'right' });
+      pdf.save(filename);
+    }
+
+    function cloneForFocusedPdf(source) {
+      const clone = source.cloneNode(true);
+      clone.removeAttribute('id');
+      clone.querySelectorAll('[id]').forEach(element => element.removeAttribute('id'));
+      clone.querySelectorAll('[data-label]').forEach(element => element.removeAttribute('data-label'));
+      clone.querySelectorAll('button, input, select, textarea, .no-print').forEach(element => element.remove());
+      return clone;
+    }
+
+    function buildScorePdfStage() {
+      const charts = document.querySelector('#commercialScoreView .charts-grid');
+      const legend = document.querySelector('#commercialScoreView .legend');
+      if (!charts || !legend) throw new Error('Gráficos de Pontuação POBJ Produção não localizados.');
+
+      const stage = document.createElement('div');
+      stage.className = 'focused-pdf-export score-pdf-export';
+      stage.setAttribute('aria-hidden', 'true');
+      const groupTitle = String(state.groupTitle || '').trim();
+      stage.innerHTML = `
+        <div class="focused-pdf-header">
+          <h1 class="focused-pdf-title">Pontuação POBJ Produção</h1>
+          ${groupTitle ? `<p class="focused-pdf-subtitle">${esc(groupTitle)}</p>` : ''}
+        </div>
+      `;
+      const chartsClone = cloneForFocusedPdf(charts);
+      const chartTitles = chartsClone.querySelectorAll('.chart-title');
+      if (chartTitles[0]) chartTitles[0].textContent = 'Pontuação';
+      if (chartTitles[1]) chartTitles[1].textContent = 'Informado';
+      stage.appendChild(chartsClone);
+      stage.appendChild(cloneForFocusedPdf(legend));
+      document.body.appendChild(stage);
+      return stage;
+    }
+
+    function buildPriorityPdfStage() {
+      const sourceTable = document.querySelector('#commercialPriorityView .commercial-priority-table');
+      if (!sourceTable) throw new Error('Tabela de Prioritários não localizada.');
+
+      const table = cloneForFocusedPdf(sourceTable);
+      table.classList.remove('mobile-card-table');
+      table.querySelectorAll('[style]').forEach(element => element.removeAttribute('style'));
+      const widths = [13, 15, 10, 10, 9, 9, 11, 12, 11];
+      const colgroup = document.createElement('colgroup');
+      widths.forEach(width => {
+        const col = document.createElement('col');
+        col.style.width = `${width}%`;
+        colgroup.appendChild(col);
+      });
+      table.prepend(colgroup);
+
+      const rowCount = table.querySelectorAll('tbody tr').length;
+      const density = rowCount <= 18 ? '' : rowCount <= 34 ? 'pdf-density-dense' : 'pdf-density-ultra';
+      const stage = document.createElement('div');
+      stage.className = `focused-pdf-export priority-pdf-export ${density}`.trim();
+      stage.setAttribute('aria-hidden', 'true');
+      stage.innerHTML = `
+        <div class="focused-pdf-header">
+          <div class="priority-pdf-meta">
+            <h1 class="focused-pdf-title">Prioritários</h1>
+            <div class="priority-pdf-date">Data do acompanhamento: ${esc(fmtDate(state.analysisDate))}</div>
+          </div>
+          <div class="commercial-pdf-export-filters">${commercialPdfFilterMarkup()}</div>
+        </div>
+        <div class="table-wrap"></div>
+      `;
+      stage.querySelector('.table-wrap').appendChild(table);
+      document.body.appendChild(stage);
+      return stage;
+    }
+
+    async function generateFocusedPdf({ buttonId, buildStage, filenamePrefix, successMessage }) {
+      const button = document.getElementById(buttonId);
+      const originalText = button?.textContent || 'Gerar PDF';
+      let stage = null;
+      if (button) {
+        button.disabled = true;
+        button.textContent = 'Gerando PDF...';
+        button.setAttribute('aria-busy', 'true');
+      }
+      try {
+        stage = buildStage();
+        await saveFocusedPdf(stage, datedPdfFilename(filenamePrefix));
+        toast(successMessage);
+      } catch (error) {
+        console.error(error);
+        alert('Não foi possível gerar o PDF. Verifique sua conexão e tente novamente.');
+      } finally {
+        stage?.remove();
+        if (button) {
+          button.disabled = false;
+          button.textContent = originalText;
+          button.removeAttribute('aria-busy');
+        }
+      }
+    }
+
+    function generateScorePdf() {
+      return generateFocusedPdf({
+        buttonId: 'scorePdfBtn',
+        buildStage: buildScorePdfStage,
+        filenamePrefix: 'pontuacao-pobj-producao',
+        successMessage: 'PDF de Pontuação POBJ Produção gerado em uma única página.'
+      });
+    }
+
+    function generatePriorityPdf() {
+      return generateFocusedPdf({
+        buttonId: 'commercialPriorityPdfBtn',
+        buildStage: buildPriorityPdfStage,
+        filenamePrefix: 'prioritarios',
+        successMessage: 'PDF de Prioritários gerado em uma única página.'
+      });
+    }
+
     async function generateCommercialPdf() {
       const button = document.getElementById('commercialPdfBtn');
       const originalText = button?.textContent || 'Gerar PDF';
@@ -4169,6 +4444,8 @@
       renderCommercialDashboard();
     });
     document.getElementById('commercialPdfBtn').addEventListener('click', generateCommercialPdf);
+    document.getElementById('scorePdfBtn').addEventListener('click', generateScorePdf);
+    document.getElementById('commercialPriorityPdfBtn').addEventListener('click', generatePriorityPdf);
 
     document.getElementById('commercialPriorityDate').addEventListener('change', event => {
       const validDates = commercialPriorityReferenceDates();
