@@ -2449,14 +2449,14 @@
           <div class="card-head">
             <div>
               <h3>Referências das entregas prioritárias</h3>
-              <p class="hint">Edite as datas e os percentuais de referência. Campos vazios mantêm a última referência válida daquela entrega.</p>
+              <p class="hint">Cadastre a referência por produto prioritário e segmento. Campos vazios mantêm a última referência válida da mesma combinação.</p>
             </div>
-            <button class="btn dark small no-print" id="addRefRowBtn">Adicionar data</button>
+            <button class="btn dark small no-print" id="addRefRowBtn">Adicionar referência</button>
           </div>
           <div class="card-body">
             <div class="table-wrap">
               <table id="refTable">
-                <thead><tr><th>Data</th><th>Cartão</th><th>Previdência</th><th>Consórcio Varejo</th><th>Consórcio Prime</th><th class="no-print"></th></tr></thead>
+                <thead><tr><th>Data</th><th>Produto prioritário</th><th>Segmento</th><th>% de referência</th><th class="no-print"></th></tr></thead>
                 <tbody></tbody>
               </table>
             </div>
@@ -2674,7 +2674,7 @@
       ]
     });
 
-    let state = defaultState();
+    let state = normalizeState(defaultState());
     let toastTimer;
     let saveTimer;
     let pendingChanges = false;
@@ -2733,9 +2733,57 @@
       return { products, segments, managers, entries };
     }
 
+    function legacyCommercialReferences(references, commercial) {
+      const normalize = value => String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLocaleLowerCase('pt-BR');
+      const productFor = term => commercial.products.find(product => normalize(product.name).includes(term));
+      const segmentFor = term => commercial.segments.find(segment => normalize(segment.name).includes(term));
+      const card = productFor('cartao');
+      const previdencia = productFor('previdencia');
+      const consorcio = productFor('consorcio');
+      const varejo = segmentFor('varejo');
+      const prime = segmentFor('prime');
+      const migrated = [];
+      const append = (source, product, segments, field) => {
+        if (!product || source[field] === '' || source[field] === null || source[field] === undefined) return;
+        segments.filter(Boolean).forEach(segment => migrated.push({
+          id: makeId(),
+          date: String(source.date || ''),
+          productId: product.id,
+          segmentId: segment.id,
+          pct: numberOrBlank(source[field])
+        }));
+      };
+      (Array.isArray(references) ? references : []).forEach(source => {
+        append(source, card, commercial.segments, 'card');
+        append(source, previdencia, commercial.segments, 'previdencia');
+        append(source, consorcio, [varejo], 'varejo');
+        append(source, consorcio, [prime], 'prime');
+      });
+      return migrated;
+    }
+
+    function normalizeCommercialReferences(value, legacyReferences, commercial) {
+      if (!Array.isArray(value)) return legacyCommercialReferences(legacyReferences, commercial);
+      return value.filter(item => item && item.id).map(item => ({
+        id: String(item.id),
+        date: String(item.date || ''),
+        productId: String(item.productId || ''),
+        segmentId: String(item.segmentId || ''),
+        pct: numberOrBlank(item.pct)
+      }));
+    }
+
     function normalizeState(value) {
       const base = isValidState(value) ? value : defaultState();
-      return { ...base, commercial: normalizeCommercial(base.commercial) };
+      const commercial = normalizeCommercial(base.commercial);
+      return {
+        ...base,
+        commercial,
+        commercialReferences: normalizeCommercialReferences(base.commercialReferences, base.references, commercial)
+      };
     }
 
     function userStorageKey(uid) {
@@ -2844,7 +2892,7 @@
         } else if (legacy && confirm('Foram encontrados dados do modelo antigo neste navegador. Deseja importá-los para esta conta?')) {
           state = legacy;
         } else {
-          state = defaultState();
+          state = normalizeState(defaultState());
         }
       }
 
@@ -2955,7 +3003,7 @@
       } catch (error) {
         console.error('Falha ao carregar os dados do usuário:', error);
         const cached = loadCachedState(user.uid);
-        state = cached || defaultState();
+        state = cached || normalizeState(defaultState());
         renderAll();
         cloudReady = true;
         setSyncStatus('Falha ao carregar a nuvem', 'error');
@@ -2974,7 +3022,7 @@
         unsubscribeCloud();
         unsubscribeCloud = null;
       }
-      state = defaultState();
+      state = normalizeState(defaultState());
       showAuth();
     }
 
@@ -3087,11 +3135,28 @@
 
     function renderReferences() {
       const body = document.querySelector('#refTable tbody');
-      const rows = [...state.references].sort((a,b) => String(a.date).localeCompare(String(b.date)));
+      const data = commercialData();
+      const priorityProducts = data.products.filter(product => product.isPriority).sort(byName);
+      const segments = [...data.segments].sort(byName);
+      const validProductIds = new Set(priorityProducts.map(product => product.id));
+      const validSegmentIds = new Set(segments.map(segment => segment.id));
+      const rows = state.commercialReferences
+        .filter(row => validProductIds.has(row.productId) && validSegmentIds.has(row.segmentId))
+        .sort((a,b) => String(a.date).localeCompare(String(b.date)));
+      if (!priorityProducts.length || !segments.length) {
+        body.innerHTML = '<tr><td colspan="5" class="commercial-empty">Marque ao menos um produto como Prioritário e cadastre um segmento.</td></tr>';
+        return;
+      }
+      if (!rows.length) {
+        body.innerHTML = '<tr><td colspan="5" class="commercial-empty">Nenhuma referência cadastrada para os produtos prioritários.</td></tr>';
+        return;
+      }
       body.innerHTML = rows.map(row => `
         <tr data-id="${row.id}">
-          <td><input data-field="date" type="date" value="${esc(row.date)}" /></td>
-          ${['card','previdencia','varejo','prime'].map(f => `<td><input data-field="${f}" type="number" min="0" step="1" placeholder="—" value="${esc(row[f])}" /></td>`).join('')}
+          <td><input data-reference-field="date" type="date" value="${esc(row.date)}" /></td>
+          <td><select data-reference-field="productId">${priorityProducts.map(product => `<option value="${esc(product.id)}" ${product.id === row.productId ? 'selected' : ''}>${esc(product.name)}</option>`).join('')}</select></td>
+          <td><select data-reference-field="segmentId">${segments.map(segment => `<option value="${esc(segment.id)}" ${segment.id === row.segmentId ? 'selected' : ''}>${esc(segment.name)}</option>`).join('')}</select></td>
+          <td><input data-reference-field="pct" type="number" min="0" step="0.01" placeholder="—" value="${esc(row.pct)}" /></td>
           <td class="action-cell no-print"><button class="icon-btn delete-ref" title="Excluir">×</button></td>
         </tr>`).join('');
     }
@@ -3219,30 +3284,24 @@
            </svg>`;
     }
 
-    function normalizeCommercialLabel(value) {
-      return String(value || '')
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLocaleLowerCase('pt-BR')
-        .replace(/[^a-z0-9]+/g, ' ')
-        .trim();
-    }
-
-    function commercialReferenceKey(product, segment) {
-      const productName = normalizeCommercialLabel(product?.name);
-      const segmentName = normalizeCommercialLabel(segment?.name);
-      if (productName.includes('cartao')) return 'card';
-      if (productName.includes('previdencia')) return 'previdencia';
-      if (productName.includes('consorcio')) {
-        if (productName.includes('prime') || segmentName.includes('prime')) return 'prime';
-        if (productName.includes('varejo') || segmentName.includes('varejo')) return 'varejo';
-      }
-      return null;
+    function getCurrentCommercialReference(productId, segmentId) {
+      const cutoff = state.analysisDate || '9999-12-31';
+      const candidates = state.commercialReferences
+        .filter(row => row.productId === productId && row.segmentId === segmentId)
+        .filter(row => row.date && row.date <= cutoff && row.pct !== '' && row.pct !== null && row.pct !== undefined)
+        .sort((a, b) => a.date.localeCompare(b.date));
+      if (!candidates.length) return { pct: null, date: '' };
+      const reference = candidates[candidates.length - 1];
+      return { pct: toNumber(reference.pct), date: reference.date };
     }
 
     function commercialPriorityReferenceDates() {
+      const data = commercialData();
+      const priorityProductIds = new Set(data.products.filter(product => product.isPriority).map(product => product.id));
+      const segmentIds = new Set(data.segments.map(segment => segment.id));
       return [...new Set(
-        state.references
+        state.commercialReferences
+          .filter(row => priorityProductIds.has(row.productId) && segmentIds.has(row.segmentId))
           .map(row => String(row.date || '').trim())
           .filter(date => /^\d{4}-\d{2}-\d{2}$/.test(date))
       )].sort((a, b) => a.localeCompare(b));
@@ -3259,8 +3318,7 @@
     function buildCommercialPriorityRows() {
       const groups = currentCommercialGroups().filter(group => Boolean(group.product.isPriority));
       const buildRow = (group, values, detail = false) => {
-        const refKey = commercialReferenceKey(group.product, group.segment);
-        const refInfo = refKey ? getCurrentReference(refKey) : { pct: null, date: '' };
+        const refInfo = getCurrentCommercialReference(group.product.id, group.segment.id);
         const realizedPct = values.pct;
         const target = values.objective > 0 && refInfo.pct !== null ? values.objective * refInfo.pct / 100 : null;
         const missingValue = target !== null ? Math.max(target - values.realized, 0) : null;
@@ -3277,7 +3335,6 @@
           objective: values.objective,
           realized: values.realized,
           realizedPct,
-          refKey,
           refPct: refInfo.pct,
           refDate: refInfo.date,
           target,
@@ -4416,15 +4473,34 @@
     });
 
     document.querySelector('#refTable tbody').addEventListener('input', e => {
-      const tr = e.target.closest('tr'); if (!tr || !e.target.dataset.field) return;
-      updateCollection('references', tr.dataset.id, e.target.dataset.field, e.target.value);
+      const tr = e.target.closest('tr');
+      const field = e.target.dataset.referenceField;
+      if (!tr || !field) return;
+      const reference = state.commercialReferences.find(item => item.id === tr.dataset.id);
+      if (!reference) return;
+      reference[field] = field === 'pct' ? numberOrBlank(e.target.value) : e.target.value;
+      saveState();
+      renderCommercialPriorities();
+    });
+    document.querySelector('#refTable tbody').addEventListener('change', e => {
+      if (!e.target.dataset.referenceField) return;
+      renderReferences();
     });
     document.querySelector('#refTable tbody').addEventListener('click', e => {
       if (!e.target.classList.contains('delete-ref')) return;
-      const id = e.target.closest('tr').dataset.id; state.references = state.references.filter(x => x.id !== id); saveState(); renderReferences(); renderReport(); renderCommercialPriorities();
+      const id = e.target.closest('tr').dataset.id;
+      state.commercialReferences = state.commercialReferences.filter(item => item.id !== id);
+      saveState(); renderReferences(); renderCommercialPriorities();
     });
     document.getElementById('addRefRowBtn').addEventListener('click', () => {
-      state.references.push({ id: makeId(), date: '', card: '', previdencia: '', varejo: '', prime: '' }); saveState(); renderReferences();
+      const data = commercialData();
+      const product = data.products.filter(item => item.isPriority).sort(byName)[0];
+      const segment = [...data.segments].sort(byName)[0];
+      if (!product || !segment) return alert('Marque ao menos um produto como Prioritário e cadastre um segmento.');
+      state.commercialReferences.push({
+        id: makeId(), date: state.analysisDate || '', productId: product.id, segmentId: segment.id, pct: ''
+      });
+      saveState(); renderReferences();
     });
 
     document.getElementById('analysisDate').addEventListener('input', e => { state.analysisDate = e.target.value; saveState(); renderReport(); renderCommercialPriorities(); });
@@ -4597,6 +4673,7 @@
         product.isPriority = priorityCheck.checked;
         saveState();
         renderCommercialConfig();
+        renderReferences();
         renderCommercialFilters();
         renderCommercialDashboard();
         renderCommercialPriorities();
