@@ -833,6 +833,18 @@
     .commercial-priority-header h3 { margin: 0 0 4px; }
     .priority-date-field { min-width: 230px; }
     .commercial-priority-table { min-width: 1180px; }
+    .commercial-priority-table .expand-btn {
+      width: 28px;
+      height: 28px;
+      border: 1px solid #cfd4da;
+      border-radius: 7px;
+      background: #fff;
+      color: #333941;
+      font-weight: 900;
+      line-height: 1;
+    }
+    .commercial-priority-table .priority-detail-row td { background: #fafbfc; }
+    .commercial-priority-table .priority-detail-row td:nth-child(2) { color: var(--muted); }
     .commercial-priority-table .delivery-segment {
       display: block;
       margin-top: 3px;
@@ -1844,13 +1856,25 @@
       }
 
       /* Prioritários */
-      .commercial-priority-table tbody td:nth-child(1),
       .commercial-priority-table tbody td:nth-child(2),
-      .commercial-priority-table tbody td:nth-child(9) {
+      .commercial-priority-table tbody td:nth-child(3),
+      .commercial-priority-table tbody td:nth-child(10) {
         grid-column: 1 / -1;
       }
 
       .commercial-priority-table tbody td:nth-child(1) {
+        position: absolute;
+        top: 9px;
+        right: 9px;
+        width: 42px;
+        padding: 0;
+      }
+
+      .commercial-priority-table tbody td:nth-child(1)::before { display: none; }
+
+      .commercial-priority-table tbody tr { padding-top: 49px; }
+
+      .commercial-priority-table tbody td:nth-child(2) {
         font-size: 16px;
         font-weight: 800;
       }
@@ -2324,12 +2348,14 @@
               <div class="commercial-summary" id="commercialPrioritySummary"></div>
               <div class="commercial-toolbar-actions">
                 <button class="btn dark small" id="commercialPriorityClearFiltersBtn">Limpar filtros</button>
+                <button class="btn dark small" id="commercialPriorityExpandAllBtn">Expandir todas</button>
+                <button class="btn dark small" id="commercialPriorityCollapseAllBtn">Recolher todas</button>
                 <button class="btn dark small" id="commercialPriorityPdfBtn" type="button">Gerar PDF</button>
               </div>
             </div>
             <div class="table-wrap">
               <table class="report-table commercial-priority-table">
-                <thead><tr><th>Gerente</th><th>Entrega</th><th>Objetivo</th><th>Realizado</th><th>% realizado</th><th>% referência</th><th>Meta até a data</th><th>Falta para chegar na referência</th><th>Status</th></tr></thead>
+                <thead><tr><th style="width:48px"></th><th>Gerente</th><th>Entrega</th><th>Objetivo</th><th>Realizado</th><th>% realizado</th><th>% referência</th><th>Meta até a data</th><th>Falta para chegar na referência</th><th>Status</th></tr></thead>
                 <tbody id="commercialPriorityBody"></tbody>
               </table>
             </div>
@@ -3228,23 +3254,24 @@
 
     function buildCommercialPriorityRows() {
       const groups = currentCommercialGroups().filter(group => Boolean(group.product.isPriority));
-      const rows = groups.map(group => {
+      const buildRow = (group, values, detail = false) => {
         const refKey = commercialReferenceKey(group.product, group.segment);
         const refInfo = refKey ? getCurrentReference(refKey) : { pct: null, date: '' };
-        const realizedPct = group.pct;
-        const target = group.objective > 0 && refInfo.pct !== null ? group.objective * refInfo.pct / 100 : null;
-        const missingValue = target !== null ? Math.max(target - group.realized, 0) : null;
+        const realizedPct = values.pct;
+        const target = values.objective > 0 && refInfo.pct !== null ? values.objective * refInfo.pct / 100 : null;
+        const missingValue = target !== null ? Math.max(target - values.realized, 0) : null;
         const missingPp = realizedPct !== null && refInfo.pct !== null ? Math.max(refInfo.pct - realizedPct, 0) : null;
         let status = 'SEM OBJETIVO';
-        if (group.objective > 0 && refInfo.pct === null) status = 'SEM REFERÊNCIA';
-        else if (group.objective > 0) status = realizedPct >= refInfo.pct ? 'CUMPRIU A REFERÊNCIA' : 'ABAIXO DA REFERÊNCIA';
+        if (values.objective > 0 && refInfo.pct === null) status = 'SEM REFERÊNCIA';
+        else if (values.objective > 0) status = realizedPct >= refInfo.pct ? 'CUMPRIU A REFERÊNCIA' : 'ABAIXO DA REFERÊNCIA';
         return {
           group,
-          manager: group.parentLabel,
+          detail,
+          manager: values.manager?.name || group.parentLabel,
           product: group.product.name,
           segment: group.segment.name,
-          objective: group.objective,
-          realized: group.realized,
+          objective: values.objective,
+          realized: values.realized,
           realizedPct,
           refKey,
           refPct: refInfo.pct,
@@ -3254,6 +3281,10 @@
           missingPp,
           status
         };
+      };
+      const rows = groups.map(group => buildRow(group, group));
+      rows.forEach(row => {
+        row.details = row.group.details.map(detail => buildRow(row.group, detail, true));
       });
       return { groups, rows };
     }
@@ -3288,16 +3319,24 @@
       const body = document.getElementById('commercialPriorityBody');
       if (!body) return;
       if (!priorityProducts.length) {
-        body.innerHTML = '<tr><td colspan="9" class="commercial-empty">Nenhum produto foi marcado como Prioritário. Faça a seleção na aba Cadastros.</td></tr>';
+        body.innerHTML = '<tr><td colspan="10" class="commercial-empty">Nenhum produto foi marcado como Prioritário. Faça a seleção na aba Cadastros.</td></tr>';
         return;
       }
       if (!rows.length) {
-        body.innerHTML = '<tr><td colspan="9" class="commercial-empty">Nenhuma entrega prioritária corresponde aos filtros ou possui dados no F-LOG.</td></tr>';
+        body.innerHTML = '<tr><td colspan="10" class="commercial-empty">Nenhuma entrega prioritária corresponde aos filtros ou possui dados no F-LOG.</td></tr>';
         return;
       }
-      body.innerHTML = rows.map(row => {
+      const markup = [];
+      rows.forEach(row => {
         const cls = row.status === 'CUMPRIU A REFERÊNCIA' ? 'ok' : row.status === 'ABAIXO DA REFERÊNCIA' ? 'bad' : 'neutral';
-        return `<tr class="manager-start">
+        const expandable = row.group.mode !== 'single' && row.details.length > 0;
+        const expanded = expandable && commercialUi.expanded.has(row.group.key);
+        const keyAttrs = expandable ? `data-group-key="${esc(row.group.key)}" aria-expanded="${expanded}"` : '';
+        const toggle = expandable
+          ? `<button class="expand-btn" data-group-key="${esc(row.group.key)}" title="${expanded ? 'Recolher' : 'Expandir'}">${expanded ? '−' : '+'}</button>`
+          : '<span class="no-expand"></span>';
+        markup.push(`<tr class="manager-start priority-group-row" ${keyAttrs}>
+          <td>${toggle}</td>
           <td>${esc(row.manager)}</td>
           <td><strong>${esc(row.product)}</strong><span class="delivery-segment">${esc(row.segment)}</span></td>
           <td class="num">${fmtCommercial(row.objective)}</td>
@@ -3307,8 +3346,26 @@
           <td class="num">${row.target === null ? '—' : fmtCommercial(row.target)}</td>
           <td class="num">${row.missingValue === null ? '—' : fmtCommercial(row.missingValue)}</td>
           <td><span class="status ${cls}">${row.status}</span></td>
-        </tr>`;
-      }).join('');
+        </tr>`);
+        if (expanded) {
+          row.details.forEach(detail => {
+            const detailCls = detail.status === 'CUMPRIU A REFERÊNCIA' ? 'ok' : detail.status === 'ABAIXO DA REFERÊNCIA' ? 'bad' : 'neutral';
+            markup.push(`<tr class="priority-detail-row">
+              <td></td>
+              <td>↳ ${esc(detail.manager)}</td>
+              <td><strong>${esc(detail.product)}</strong><span class="delivery-segment">${esc(detail.segment)}</span></td>
+              <td class="num">${fmtCommercial(detail.objective)}</td>
+              <td class="num">${fmtCommercial(detail.realized)}</td>
+              <td class="num">${detail.realizedPct === null ? '—' : fmtPct(detail.realizedPct, 1)}</td>
+              <td class="num">${detail.refPct === null ? '—' : fmtPct(detail.refPct, 0)}</td>
+              <td class="num">${detail.target === null ? '—' : fmtCommercial(detail.target)}</td>
+              <td class="num">${detail.missingValue === null ? '—' : fmtCommercial(detail.missingValue)}</td>
+              <td><span class="status ${detailCls}">${detail.status}</span></td>
+            </tr>`);
+          });
+        }
+      });
+      body.innerHTML = markup.join('');
     }
 
     function parseCommercialNumber(value) {
@@ -3814,6 +3871,10 @@
 
       const table = cloneForFocusedPdf(sourceTable);
       table.classList.remove('mobile-card-table');
+      table.querySelectorAll('tr').forEach(row => {
+        row.querySelector(':scope > th:first-child, :scope > td:first-child')?.remove();
+        row.removeAttribute('aria-expanded');
+      });
       table.querySelectorAll('[style]').forEach(element => element.removeAttribute('style'));
       const widths = [13, 15, 10, 10, 9, 9, 11, 12, 11];
       const colgroup = document.createElement('colgroup');
@@ -4414,12 +4475,13 @@
       }
 
       const toggle = event.target.closest('.expand-btn');
-      const row = event.target.closest('.group-row[data-group-key]');
+      const row = event.target.closest('.group-row[data-group-key], .priority-group-row[data-group-key]');
       const key = toggle?.dataset.groupKey || row?.dataset.groupKey;
       if (key) {
         if (commercialUi.expanded.has(key)) commercialUi.expanded.delete(key);
         else commercialUi.expanded.add(key);
         renderCommercialDashboard();
+        renderCommercialPriorities();
       }
     });
 
@@ -4432,6 +4494,18 @@
     document.getElementById('commercialPriorityClearFiltersBtn').addEventListener('click', () => {
       Object.values(commercialUi.filters).forEach(set => set.clear());
       renderCommercialFilters();
+      renderCommercialDashboard();
+      renderCommercialPriorities();
+    });
+    document.getElementById('commercialPriorityExpandAllBtn').addEventListener('click', () => {
+      buildCommercialPriorityRows().groups
+        .filter(group => group.details.length > 0 && group.mode !== 'single')
+        .forEach(group => commercialUi.expanded.add(group.key));
+      renderCommercialDashboard();
+      renderCommercialPriorities();
+    });
+    document.getElementById('commercialPriorityCollapseAllBtn').addEventListener('click', () => {
+      commercialUi.expanded.clear();
       renderCommercialDashboard();
       renderCommercialPriorities();
     });
