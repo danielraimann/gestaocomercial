@@ -319,6 +319,21 @@
       margin-bottom: 12px;
     }
     .commercial-toolbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .pdf-score-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 34px;
+      padding: 5px 10px;
+      border: 1px solid #c8ced6;
+      border-radius: 8px;
+      background: #fff;
+      color: #343a42;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .pdf-score-option input { width: 17px; height: 17px; margin: 0; accent-color: var(--brand); }
     .commercial-summary {
       color: var(--muted);
       font-size: 13px;
@@ -650,6 +665,18 @@
     .score-pdf-export .bar-track { height: 20px; }
     .score-pdf-export .axis-row { grid-template-columns: 145px 1fr 60px; gap: 8px; font-size: 10px; }
     .score-pdf-export .legend { justify-content: center; margin-top: 10px; font-size: 12px; }
+    .pobj-pdf-attachment { margin-top: 10px; padding-top: 8px; border-top: 3px solid var(--brand); }
+    .pobj-pdf-attachment-title { margin: 0 0 7px; color: var(--brand-dark); font-size: 19px; font-weight: 900; }
+    .pobj-pdf-attachment-subtitle { margin: -3px 0 7px; color: #4a515a; font-size: 13px; font-weight: 800; }
+    .pobj-pdf-attachment .charts-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+    .pobj-pdf-attachment .chart-card { padding: 7px; }
+    .pobj-pdf-attachment .chart-title { margin-bottom: 6px; font-size: 14px; }
+    .pobj-pdf-attachment .bar-row { grid-template-columns: 120px 1fr 50px; gap: 6px; margin: 4px 0; }
+    .pobj-pdf-attachment .axis-row { grid-template-columns: 120px 1fr 50px; gap: 6px; margin-bottom: 4px; }
+    .pobj-pdf-attachment .bar-label, .pobj-pdf-attachment .bar-value { font-size: 10px; }
+    .pobj-pdf-attachment .bar-track { height: 14px; }
+    .pobj-pdf-attachment .legend { justify-content: center; gap: 10px; padding-top: 7px; }
+    .pobj-pdf-attachment .legend-item { font-size: 9px; }
     .priority-pdf-meta {
       display: flex;
       align-items: flex-end;
@@ -1672,6 +1699,8 @@
         line-height: 1.2;
       }
 
+      .commercial-toolbar-actions .pdf-score-option { grid-column: 1 / -1; min-height: 46px; justify-content: center; }
+
       .field-row,
       .commercial-priority-header {
         align-items: stretch;
@@ -2385,6 +2414,7 @@
             <div class="commercial-toolbar no-print">
               <div class="commercial-summary" id="commercialFilterSummary"></div>
               <div class="commercial-toolbar-actions">
+                <label class="pdf-score-option" for="commercialIncludeScorePdf"><input id="commercialIncludeScorePdf" type="checkbox" />Adicionar Pontuação POBJ Produção</label>
                 <button class="btn dark small" id="commercialClearFiltersBtn">Limpar filtros</button>
                 <button class="btn dark small" id="commercialExpandAllBtn">Expandir todas</button>
                 <button class="btn dark small" id="commercialCollapseAllBtn">Recolher todas</button>
@@ -2442,6 +2472,7 @@
             <div class="commercial-toolbar no-print">
               <div class="commercial-summary" id="commercialPrioritySummary"></div>
               <div class="commercial-toolbar-actions">
+                <label class="pdf-score-option" for="commercialPriorityIncludeScorePdf"><input id="commercialPriorityIncludeScorePdf" type="checkbox" />Adicionar Pontuação POBJ Produção</label>
                 <button class="btn dark small" id="commercialPriorityClearFiltersBtn">Limpar filtros</button>
                 <button class="btn dark small" id="commercialPriorityExpandAllBtn">Expandir todas</button>
                 <button class="btn dark small" id="commercialPriorityCollapseAllBtn">Recolher todas</button>
@@ -3926,6 +3957,7 @@
         <div class="table-wrap"></div>
       `;
       stage.querySelector('.table-wrap').appendChild(table);
+      if (document.getElementById('commercialIncludeScorePdf')?.checked) appendScorePdfAttachment(stage);
       document.body.appendChild(stage);
       return stage;
     }
@@ -4052,6 +4084,26 @@
       return clone;
     }
 
+    function appendScorePdfAttachment(stage) {
+      const charts = document.querySelector('#commercialScoreView .charts-grid');
+      const legend = document.querySelector('#commercialScoreView .legend');
+      if (!charts || !legend) throw new Error('Gráficos de Pontuação POBJ Produção não localizados.');
+      const section = document.createElement('section');
+      section.className = 'pobj-pdf-attachment';
+      const groupTitle = String(state.groupTitle || '').trim();
+      section.innerHTML = `
+        <h2 class="pobj-pdf-attachment-title">Pontuação POBJ Produção</h2>
+        ${groupTitle ? `<p class="pobj-pdf-attachment-subtitle">${esc(groupTitle)}</p>` : ''}
+      `;
+      const chartsClone = cloneForFocusedPdf(charts);
+      const chartTitles = chartsClone.querySelectorAll('.chart-title');
+      if (chartTitles[0]) chartTitles[0].textContent = 'Pontuação';
+      if (chartTitles[1]) chartTitles[1].textContent = 'Informado';
+      section.appendChild(chartsClone);
+      section.appendChild(cloneForFocusedPdf(legend));
+      stage.appendChild(section);
+    }
+
     function buildScorePdfStage() {
       const charts = document.querySelector('#commercialScoreView .charts-grid');
       const legend = document.querySelector('#commercialScoreView .legend');
@@ -4113,6 +4165,7 @@
         <div class="table-wrap"></div>
       `;
       stage.querySelector('.table-wrap').appendChild(table);
+      if (document.getElementById('commercialPriorityIncludeScorePdf')?.checked) appendScorePdfAttachment(stage);
       document.body.appendChild(stage);
       return stage;
     }
