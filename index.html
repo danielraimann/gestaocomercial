@@ -43,7 +43,7 @@
       font-family: Arial, Helvetica, sans-serif;
     }
 
-    button, input { font: inherit; }
+    button, input, select, textarea { font: inherit; }
     button { cursor: pointer; }
 
     .app-header {
@@ -132,7 +132,7 @@
     .field-row { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; }
     .field { display: grid; gap: 6px; min-width: 210px; }
     .field label { font-size: 12px; font-weight: 700; color: var(--muted); }
-    input[type="text"], input[type="number"], input[type="date"], select {
+    input[type="text"], input[type="number"], input[type="date"], select, textarea {
       width: 100%;
       border: 1px solid #bec5ce;
       border-radius: 7px;
@@ -140,7 +140,7 @@
       background: var(--input);
       color: var(--ink);
     }
-    input:focus, select:focus { outline: 2px solid rgba(181,31,46,.2); border-color: var(--brand); }
+    input:focus, select:focus, textarea:focus { outline: 2px solid rgba(181,31,46,.2); border-color: var(--brand); }
 
     .table-wrap { overflow: auto; border: 1px solid var(--line); border-radius: 9px; }
     table { width: 100%; border-collapse: collapse; min-width: 880px; }
@@ -772,6 +772,65 @@
       font-variant-numeric: tabular-nums;
       letter-spacing: .01em;
     }
+    .action-plan-toolbar {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .action-plan-toolbar .field { flex: 1 1 280px; }
+    .action-plan-list { display: grid; gap: 12px; }
+    .action-plan-card {
+      display: grid;
+      grid-template-columns: 46px minmax(0, 1fr);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 3px 12px rgba(25,31,40,.06);
+      overflow: hidden;
+    }
+    .action-plan-card.dragging { opacity: .48; border-color: var(--brand); }
+    .action-plan-card.drag-over { box-shadow: 0 -4px 0 var(--brand), 0 3px 12px rgba(25,31,40,.08); }
+    .action-plan-drag {
+      border: 0;
+      border-right: 1px solid var(--line);
+      background: #f4f6f8;
+      color: #68707c;
+      cursor: grab;
+      font-size: 22px;
+      font-weight: 900;
+      touch-action: none;
+    }
+    .action-plan-drag:active { cursor: grabbing; }
+    .action-plan-content { padding: 14px; min-width: 0; }
+    .action-plan-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .action-plan-order { font-weight: 800; color: var(--brand-dark); }
+    .action-plan-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .action-plan-grid .wide { grid-column: 1 / -1; }
+    .action-plan-field { display: grid; gap: 6px; min-width: 0; }
+    .action-plan-field label { color: var(--muted); font-size: 12px; font-weight: 700; }
+    .action-plan-field textarea { min-height: 92px; resize: vertical; }
+    .action-plan-progress { display: grid; grid-template-columns: 150px 1fr 1fr 130px; gap: 12px; grid-column: 1 / -1; }
+    .action-plan-evolution {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      border-radius: 8px;
+      background: #edf0f3;
+      color: #343a42;
+      font-weight: 800;
+    }
+    .action-plan-empty { padding: 34px 14px; text-align: center; color: var(--muted); border: 1px dashed #bfc5cd; border-radius: 12px; }
+    .action-plan-pdf-export .action-plan-print-list { display: grid; gap: 8px; }
+    .action-plan-print-card { border: 1px solid #b8bec6; border-radius: 7px; padding: 9px 11px; break-inside: avoid; }
+    .action-plan-print-card h2 { margin: 0 0 5px; font-size: 16px; color: #20242a; }
+    .action-plan-print-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; color: #515965; font-size: 11px; margin-bottom: 6px; }
+    .action-plan-print-text { margin: 6px 0; white-space: pre-wrap; font-size: 12px; line-height: 1.25; }
+    .action-plan-print-progress { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 6px; }
+    .action-plan-print-progress span { background: #f1f3f5; border-radius: 5px; padding: 6px; font-size: 11px; }
     .setup-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1892,6 +1951,11 @@
 
       #scoreTable tr.f-log-hidden-start { margin-top: 10px; }
 
+      .action-plan-grid, .action-plan-progress { grid-template-columns: 1fr; }
+      .action-plan-progress { grid-column: auto; }
+      .action-plan-grid .wide { grid-column: auto; }
+      .action-plan-card { grid-template-columns: 40px minmax(0, 1fr); }
+
       .commercial-priority-table tbody td:nth-child(1) {
         position: absolute;
         top: 9px;
@@ -2253,6 +2317,7 @@
           <button class="commercial-subtab" data-commercial-view="commercialDashboardView">Visão consolidada</button>
           <button class="commercial-subtab" data-commercial-view="commercialPriorityView">Prioritários</button>
           <button class="commercial-subtab" data-commercial-view="commercialInputView">F-LOG</button>
+          <button class="commercial-subtab" data-commercial-view="commercialActionPlanView">Plano de Ação</button>
           <button class="commercial-subtab" data-commercial-view="commercialConfigView">Cadastros</button>
           <button class="commercial-subtab" data-commercial-view="commercialReferencesView">Referências</button>
         </div>
@@ -2408,6 +2473,23 @@
                 <tbody id="commercialInputBody"></tbody>
               </table>
             </div>
+          </div>
+        </div>
+
+        <div id="commercialActionPlanView" class="commercial-view">
+          <div class="card-body">
+            <div class="action-plan-toolbar">
+              <div class="field">
+                <label for="actionPlanTitle">Título</label>
+                <input id="actionPlanTitle" type="text" placeholder="Plano de Ação" />
+              </div>
+              <div class="commercial-toolbar-actions no-print">
+                <button class="btn dark small" id="addActionPlanBtn" type="button">Adicionar oportunidade</button>
+                <button class="btn dark small" id="actionPlanPdfBtn" type="button">Gerar PDF</button>
+              </div>
+            </div>
+            <p class="soft-note no-print"><strong>Plano de Ação:</strong> todos os campos são opcionais. Use a alça à esquerda para arrastar os cartões e definir a ordem das ações.</p>
+            <div id="actionPlanList" class="action-plan-list"></div>
           </div>
         </div>
 
@@ -2675,6 +2757,8 @@
 
     const defaultState = () => ({
       groupTitle: 'GRUPO 5 - VAREJO',
+      actionPlanTitle: 'Plano de Ação',
+      actionPlans: [],
       analysisDate: '2026-08-07',
       commercial: defaultCommercial(),
       scores: [
@@ -2712,6 +2796,7 @@
     let cloudReady = false;
     let lastSavedJson = '';
     let authMode = 'login';
+    let draggedActionId = '';
     const commercialUi = {
       view: 'commercialScoreView',
       expanded: new Set(),
@@ -2805,9 +2890,24 @@
     function normalizeState(value) {
       const base = isValidState(value) ? value : defaultState();
       const commercial = normalizeCommercial(base.commercial);
+      const actionPlans = Array.isArray(base.actionPlans) ? base.actionPlans.filter(item => item && item.id).map(item => ({
+        id: String(item.id),
+        segmentId: String(item.segmentId || ''),
+        managerId: String(item.managerId || ''),
+        productId: String(item.productId || ''),
+        opportunity: String(item.opportunity || ''),
+        text: String(item.text || ''),
+        startDate: String(item.startDate || ''),
+        endDate: String(item.endDate || ''),
+        measureType: item.measureType === 'quantity' ? 'quantity' : 'value',
+        initialValue: numberOrBlank(item.initialValue),
+        currentValue: numberOrBlank(item.currentValue)
+      })) : [];
       return {
         ...base,
         commercial,
+        actionPlanTitle: String(base.actionPlanTitle || 'Plano de Ação'),
+        actionPlans,
         commercialReferences: normalizeCommercialReferences(base.commercialReferences, base.references, commercial)
       };
     }
@@ -4017,6 +4117,56 @@
       return stage;
     }
 
+    function buildActionPlanPdfStage() {
+      const data = commercialData();
+      const actions = Array.isArray(state.actionPlans) ? state.actionPlans : [];
+      const findName = (collection, id) => collection.find(item => item.id === id)?.name || 'Não informado';
+      const selectedNames = (collection, field) => [...new Set(actions.map(action => action[field]).filter(Boolean).map(id => findName(collection, id)))];
+      const segments = selectedNames(data.segments, 'segmentId');
+      const managers = selectedNames(data.managers, 'managerId');
+      const stage = document.createElement('div');
+      stage.className = 'focused-pdf-export action-plan-pdf-export';
+      stage.setAttribute('aria-hidden', 'true');
+      stage.innerHTML = `
+        <div class="focused-pdf-header">
+          <h1 class="focused-pdf-title">${esc(String(state.actionPlanTitle || '').trim() || 'Plano de Ação')}</h1>
+          <div class="action-plan-print-meta">
+            <strong>Segmento:</strong> ${esc(segments.join(', ') || 'Não informado')}
+            <strong>Gerente:</strong> ${esc(managers.join(', ') || 'Não informado')}
+          </div>
+        </div>
+        <div class="action-plan-print-list"></div>
+      `;
+      const list = stage.querySelector('.action-plan-print-list');
+      if (!actions.length) {
+        list.innerHTML = '<div class="action-plan-empty">Nenhuma ação cadastrada.</div>';
+      } else {
+        list.innerHTML = actions.map((action, index) => {
+          const evolution = actionPlanEvolution(action);
+          const initial = action.initialValue === '' ? 'Não informado' : action.measureType === 'quantity' ? fmt(action.initialValue, 2) : fmtCommercial(action.initialValue);
+          const current = action.currentValue === '' ? 'Não informado' : action.measureType === 'quantity' ? fmt(action.currentValue, 2) : fmtCommercial(action.currentValue);
+          return `<section class="action-plan-print-card">
+            <h2>${index + 1}. ${esc(action.opportunity || 'Oportunidade sem nome')}</h2>
+            <div class="action-plan-print-meta">
+              <span><strong>Segmento:</strong> ${esc(findName(data.segments, action.segmentId))}</span>
+              <span><strong>Gerente:</strong> ${esc(findName(data.managers, action.managerId))}</span>
+              <span><strong>Produto:</strong> ${esc(findName(data.products, action.productId))}</span>
+              <span><strong>Período:</strong> ${esc(action.startDate ? fmtDate(action.startDate) : 'Não informado')} a ${esc(action.endDate ? fmtDate(action.endDate) : 'Não informado')}</span>
+            </div>
+            ${action.text ? `<p class="action-plan-print-text">${esc(action.text)}</p>` : ''}
+            <div class="action-plan-print-progress">
+              <span><strong>Unidade:</strong><br>${action.measureType === 'quantity' ? 'Quantidade' : 'Valor'}</span>
+              <span><strong>Inicial:</strong><br>${esc(initial)}</span>
+              <span><strong>Atual:</strong><br>${esc(current)}</span>
+              <span><strong>Evolução:</strong><br>${evolution === null ? '—' : fmtPct(evolution, 1)}</span>
+            </div>
+          </section>`;
+        }).join('');
+      }
+      document.body.appendChild(stage);
+      return stage;
+    }
+
     async function generateFocusedPdf({ buttonId, buildStage, filenamePrefix, successMessage }) {
       const button = document.getElementById(buttonId);
       const originalText = button?.textContent || 'Gerar PDF';
@@ -4058,6 +4208,15 @@
         buildStage: buildPriorityPdfStage,
         filenamePrefix: 'prioritarios',
         successMessage: 'PDF de Prioritários gerado em uma única página.'
+      });
+    }
+
+    function generateActionPlanPdf() {
+      return generateFocusedPdf({
+        buttonId: 'actionPlanPdfBtn',
+        buildStage: buildActionPlanPdfStage,
+        filenamePrefix: 'plano-de-acao',
+        successMessage: 'PDF do Plano de Ação gerado.'
       });
     }
 
@@ -4339,6 +4498,67 @@
       }).join('');
     }
 
+    function actionPlanEvolution(action) {
+      if (action.initialValue === '' || action.currentValue === '') return null;
+      const initial = toNumber(action.initialValue);
+      if (!initial) return null;
+      return (toNumber(action.currentValue) - initial) / Math.abs(initial) * 100;
+    }
+
+    function actionPlanOptions(items, selectedId, placeholder) {
+      return `<option value="">${esc(placeholder)}</option>` + [...items].sort(byName).map(item =>
+        `<option value="${esc(item.id)}" ${item.id === selectedId ? 'selected' : ''}>${esc(item.name)}</option>`
+      ).join('');
+    }
+
+    function renderActionPlans() {
+      const title = document.getElementById('actionPlanTitle');
+      const list = document.getElementById('actionPlanList');
+      if (!title || !list) return;
+      title.value = state.actionPlanTitle || '';
+      const data = commercialData();
+      const actions = Array.isArray(state.actionPlans) ? state.actionPlans : [];
+      if (!actions.length) {
+        list.innerHTML = '<div class="action-plan-empty">Nenhuma oportunidade cadastrada. Clique em “Adicionar oportunidade” para começar.</div>';
+        return;
+      }
+
+      list.innerHTML = actions.map((action, index) => {
+        const managers = action.segmentId
+          ? data.managers.filter(manager => manager.segmentId === action.segmentId)
+          : data.managers;
+        const evolution = actionPlanEvolution(action);
+        return `<article class="action-plan-card" data-action-id="${esc(action.id)}">
+          <button class="action-plan-drag no-print" type="button" draggable="true" aria-label="Arrastar oportunidade ${index + 1}" title="Arraste para reordenar">⋮⋮</button>
+          <div class="action-plan-content">
+            <div class="action-plan-card-head">
+              <span class="action-plan-order">Ação ${index + 1}</span>
+              <div class="no-print">
+                <button class="icon-btn move-action-up" type="button" title="Mover para cima" aria-label="Mover ação para cima" ${index === 0 ? 'disabled' : ''}>↑</button>
+                <button class="icon-btn move-action-down" type="button" title="Mover para baixo" aria-label="Mover ação para baixo" ${index === actions.length - 1 ? 'disabled' : ''}>↓</button>
+                <button class="icon-btn delete-action-plan" type="button" title="Excluir oportunidade" aria-label="Excluir oportunidade">×</button>
+              </div>
+            </div>
+            <div class="action-plan-grid">
+              <div class="action-plan-field"><label>Segmento</label><select data-action-field="segmentId">${actionPlanOptions(data.segments, action.segmentId, 'Selecione o segmento')}</select></div>
+              <div class="action-plan-field"><label>Gerente</label><select data-action-field="managerId">${actionPlanOptions(managers, action.managerId, 'Selecione o gerente')}</select></div>
+              <div class="action-plan-field"><label>Produto</label><select data-action-field="productId">${actionPlanOptions(data.products, action.productId, 'Selecione o produto')}</select></div>
+              <div class="action-plan-field wide"><label>Nome da oportunidade</label><input data-action-field="opportunity" type="text" value="${esc(action.opportunity)}" placeholder="Nome da oportunidade" /></div>
+              <div class="action-plan-field wide"><label>Texto livre</label><textarea data-action-field="text" placeholder="Descreva a ação, responsáveis, próximos passos ou observações">${esc(action.text)}</textarea></div>
+              <div class="action-plan-field"><label>Data de início</label><input data-action-field="startDate" type="date" value="${esc(action.startDate)}" /></div>
+              <div class="action-plan-field"><label>Data de fim</label><input data-action-field="endDate" type="date" value="${esc(action.endDate)}" /></div>
+              <div class="action-plan-progress">
+                <div class="action-plan-field"><label>Unidade</label><select data-action-field="measureType"><option value="value" ${action.measureType !== 'quantity' ? 'selected' : ''}>Valor</option><option value="quantity" ${action.measureType === 'quantity' ? 'selected' : ''}>Quantidade</option></select></div>
+                <div class="action-plan-field"><label>${action.measureType === 'quantity' ? 'Quantidade inicial' : 'Valor inicial'}</label><input data-action-field="initialValue" type="number" step="0.01" value="${esc(action.initialValue)}" /></div>
+                <div class="action-plan-field"><label>${action.measureType === 'quantity' ? 'Quantidade atual' : 'Valor atual'}</label><input data-action-field="currentValue" type="number" step="0.01" value="${esc(action.currentValue)}" /></div>
+                <div class="action-plan-field"><label>% de evolução</label><div class="action-plan-evolution">${evolution === null ? '—' : fmtPct(evolution, 1)}</div></div>
+              </div>
+            </div>
+          </div>
+        </article>`;
+      }).join('');
+    }
+
     function renderCommercialConfig() {
       const data = commercialData();
       const productsBody = document.querySelector('#commercialProductsTable tbody');
@@ -4379,6 +4599,7 @@
       renderCommercialPriorities();
       renderCommercialManagerSelector();
       renderCommercialInput();
+      renderActionPlans();
       renderCommercialConfig();
     }
 
@@ -4568,6 +4789,102 @@
       state.managers.push({ id: makeId(), name: '', cardObj: '', cardReal: '', prevObj: '', prevReal: '', varejoObj: '', varejoReal: '', primeObj: '', primeReal: '' }); saveState(); renderManagers();
     });
 
+    document.getElementById('actionPlanTitle').addEventListener('input', event => {
+      state.actionPlanTitle = event.target.value;
+      saveState();
+    });
+
+    document.getElementById('addActionPlanBtn').addEventListener('click', () => {
+      if (!Array.isArray(state.actionPlans)) state.actionPlans = [];
+      state.actionPlans.push({
+        id: makeId(), segmentId: '', managerId: '', productId: '', opportunity: '', text: '',
+        startDate: '', endDate: '', measureType: 'value', initialValue: '', currentValue: ''
+      });
+      saveState();
+      renderActionPlans();
+      document.querySelector('#actionPlanList .action-plan-card:last-child')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    document.getElementById('actionPlanList').addEventListener('input', event => {
+      const field = event.target.dataset.actionField;
+      const card = event.target.closest('[data-action-id]');
+      const action = state.actionPlans.find(item => item.id === card?.dataset.actionId);
+      if (!field || !action || event.target.tagName === 'SELECT') return;
+      action[field] = ['initialValue', 'currentValue'].includes(field) ? numberOrBlank(event.target.value) : event.target.value;
+      saveState();
+      if (['initialValue', 'currentValue'].includes(field)) {
+        const evolution = actionPlanEvolution(action);
+        card.querySelector('.action-plan-evolution').textContent = evolution === null ? '—' : fmtPct(evolution, 1);
+      }
+    });
+
+    document.getElementById('actionPlanList').addEventListener('change', event => {
+      const field = event.target.dataset.actionField;
+      const card = event.target.closest('[data-action-id]');
+      const action = state.actionPlans.find(item => item.id === card?.dataset.actionId);
+      if (!field || !action) return;
+      action[field] = event.target.value;
+      if (field === 'segmentId') {
+        const manager = commercialData().managers.find(item => item.id === action.managerId);
+        if (manager && manager.segmentId !== action.segmentId) action.managerId = '';
+      }
+      saveState();
+      if (['segmentId', 'measureType'].includes(field)) renderActionPlans();
+    });
+
+    document.getElementById('actionPlanList').addEventListener('click', event => {
+      const card = event.target.closest('[data-action-id]');
+      if (!card) return;
+      const index = state.actionPlans.findIndex(item => item.id === card.dataset.actionId);
+      if (index < 0) return;
+      if (event.target.closest('.delete-action-plan')) {
+        if (!confirm('Excluir esta oportunidade do Plano de Ação?')) return;
+        state.actionPlans.splice(index, 1);
+      } else if (event.target.closest('.move-action-up') && index > 0) {
+        [state.actionPlans[index - 1], state.actionPlans[index]] = [state.actionPlans[index], state.actionPlans[index - 1]];
+      } else if (event.target.closest('.move-action-down') && index < state.actionPlans.length - 1) {
+        [state.actionPlans[index + 1], state.actionPlans[index]] = [state.actionPlans[index], state.actionPlans[index + 1]];
+      } else return;
+      saveState();
+      renderActionPlans();
+    });
+
+    document.getElementById('actionPlanList').addEventListener('dragstart', event => {
+      const handle = event.target.closest('.action-plan-drag');
+      const card = handle?.closest('[data-action-id]');
+      if (!card) return;
+      draggedActionId = card.dataset.actionId;
+      card.classList.add('dragging');
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', draggedActionId);
+    });
+    document.getElementById('actionPlanList').addEventListener('dragover', event => {
+      const card = event.target.closest('[data-action-id]');
+      if (!card || !draggedActionId || card.dataset.actionId === draggedActionId) return;
+      event.preventDefault();
+      document.querySelectorAll('#actionPlanList .drag-over').forEach(item => item.classList.remove('drag-over'));
+      card.classList.add('drag-over');
+      event.dataTransfer.dropEffect = 'move';
+    });
+    document.getElementById('actionPlanList').addEventListener('drop', event => {
+      const targetCard = event.target.closest('[data-action-id]');
+      if (!targetCard || !draggedActionId) return;
+      event.preventDefault();
+      const from = state.actionPlans.findIndex(item => item.id === draggedActionId);
+      const to = state.actionPlans.findIndex(item => item.id === targetCard.dataset.actionId);
+      if (from >= 0 && to >= 0 && from !== to) {
+        const [moved] = state.actionPlans.splice(from, 1);
+        state.actionPlans.splice(to, 0, moved);
+        saveState();
+      }
+      draggedActionId = '';
+      renderActionPlans();
+    });
+    document.getElementById('actionPlanList').addEventListener('dragend', () => {
+      draggedActionId = '';
+      document.querySelectorAll('#actionPlanList .dragging, #actionPlanList .drag-over').forEach(item => item.classList.remove('dragging', 'drag-over'));
+    });
+
 
 
     document.querySelectorAll('.commercial-subtab').forEach(btn => btn.addEventListener('click', () => {
@@ -4577,6 +4894,7 @@
       if (commercialUi.view === 'commercialDashboardView') renderCommercialDashboard();
       if (commercialUi.view === 'commercialPriorityView') { renderCommercialFilters(); renderCommercialPriorities(); }
       if (commercialUi.view === 'commercialInputView') { renderCommercialManagerSelector(); renderCommercialInput(); }
+      if (commercialUi.view === 'commercialActionPlanView') renderActionPlans();
       if (commercialUi.view === 'commercialConfigView') renderCommercialConfig();
       if (commercialUi.view === 'commercialReferencesView') renderReferences();
     }));
@@ -4665,6 +4983,7 @@
     document.getElementById('commercialPdfBtn').addEventListener('click', generateCommercialPdf);
     document.getElementById('scorePdfBtn').addEventListener('click', generateScorePdf);
     document.getElementById('commercialPriorityPdfBtn').addEventListener('click', generatePriorityPdf);
+    document.getElementById('actionPlanPdfBtn').addEventListener('click', generateActionPlanPdf);
 
     document.getElementById('commercialPriorityDate').addEventListener('change', event => {
       const validDates = commercialPriorityReferenceDates();
