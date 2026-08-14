@@ -807,7 +807,8 @@
       flex-wrap: wrap;
       margin-bottom: 16px;
     }
-    .action-plan-toolbar .field { flex: 1 1 280px; }
+    .action-plan-toolbar h3 { margin: 0; color: var(--brand-dark); font-size: 24px; }
+    .action-plan-context { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
     .action-plan-list { display: grid; gap: 12px; }
     .action-plan-card {
       display: grid;
@@ -832,8 +833,13 @@
     }
     .action-plan-drag:active { cursor: grabbing; }
     .action-plan-content { padding: 14px; min-width: 0; }
-    .action-plan-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .action-plan-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .action-plan-card-head-main { display: flex; align-items: center; gap: 10px; min-width: 0; cursor: pointer; }
     .action-plan-order { font-weight: 800; color: var(--brand-dark); }
+    .action-plan-summary { color: #59616b; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .action-plan-toggle { width: auto; min-width: 36px; padding: 0 9px; color: var(--brand-dark); }
+    .action-plan-content-body { margin-top: 12px; }
+    .action-plan-card.collapsed .action-plan-content-body { display: none; }
     .action-plan-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
     .action-plan-grid .wide { grid-column: 1 / -1; }
     .action-plan-field { display: grid; gap: 6px; min-width: 0; }
@@ -1980,7 +1986,7 @@
 
       #scoreTable tr.f-log-hidden-start { margin-top: 10px; }
 
-      .action-plan-grid, .action-plan-progress { grid-template-columns: 1fr; }
+      .action-plan-context, .action-plan-grid, .action-plan-progress { grid-template-columns: 1fr; }
       .action-plan-progress { grid-column: auto; }
       .action-plan-grid .wide { grid-column: auto; }
       .action-plan-card { grid-template-columns: 40px minmax(0, 1fr); }
@@ -2509,17 +2515,19 @@
 
         <div id="commercialActionPlanView" class="commercial-view">
           <div class="card-body">
+            <div class="action-plan-context">
+              <div class="action-plan-field"><label for="actionPlanSegment">Segmento</label><select id="actionPlanSegment"></select></div>
+              <div class="action-plan-field"><label for="actionPlanManager">Gerente</label><select id="actionPlanManager"></select></div>
+              <div class="action-plan-field"><label for="actionPlanProduct">Produto</label><select id="actionPlanProduct"></select></div>
+            </div>
             <div class="action-plan-toolbar">
-              <div class="field">
-                <label for="actionPlanTitle">Título</label>
-                <input id="actionPlanTitle" type="text" placeholder="Plano de Ação" />
-              </div>
+              <h3>Plano de Ação</h3>
               <div class="commercial-toolbar-actions no-print">
                 <button class="btn dark small" id="addActionPlanBtn" type="button">Adicionar oportunidade</button>
                 <button class="btn dark small" id="actionPlanPdfBtn" type="button">Gerar PDF</button>
               </div>
             </div>
-            <p class="soft-note no-print"><strong>Plano de Ação:</strong> todos os campos são opcionais. Use a alça à esquerda para arrastar os cartões e definir a ordem das ações.</p>
+            <p class="soft-note no-print"><strong>Plano de Ação:</strong> todos os campos são opcionais. Clique no cabeçalho de uma ação para expandir ou minimizar; use a alça à esquerda para reordenar os cartões.</p>
             <div id="actionPlanList" class="action-plan-list"></div>
           </div>
         </div>
@@ -2789,6 +2797,9 @@
     const defaultState = () => ({
       groupTitle: 'GRUPO 5 - VAREJO',
       actionPlanTitle: 'Plano de Ação',
+      actionPlanSegmentId: '',
+      actionPlanManagerId: '',
+      actionPlanProductId: '',
       actionPlans: [],
       analysisDate: '2026-08-07',
       commercial: defaultCommercial(),
@@ -2828,6 +2839,7 @@
     let lastSavedJson = '';
     let authMode = 'login';
     let draggedActionId = '';
+    const expandedActionPlans = new Set();
     const commercialUi = {
       view: 'commercialScoreView',
       expanded: new Set(),
@@ -2934,10 +2946,14 @@
         initialValue: numberOrBlank(item.initialValue),
         currentValue: numberOrBlank(item.currentValue)
       })) : [];
+      const firstAction = actionPlans[0] || {};
       return {
         ...base,
         commercial,
         actionPlanTitle: String(base.actionPlanTitle || 'Plano de Ação'),
+        actionPlanSegmentId: String(base.actionPlanSegmentId || firstAction.segmentId || ''),
+        actionPlanManagerId: String(base.actionPlanManagerId || firstAction.managerId || ''),
+        actionPlanProductId: String(base.actionPlanProductId || firstAction.productId || ''),
         actionPlans,
         commercialReferences: normalizeCommercialReferences(base.commercialReferences, base.references, commercial)
       };
@@ -4174,18 +4190,19 @@
       const data = commercialData();
       const actions = Array.isArray(state.actionPlans) ? state.actionPlans : [];
       const findName = (collection, id) => collection.find(item => item.id === id)?.name || 'Não informado';
-      const selectedNames = (collection, field) => [...new Set(actions.map(action => action[field]).filter(Boolean).map(id => findName(collection, id)))];
-      const segments = selectedNames(data.segments, 'segmentId');
-      const managers = selectedNames(data.managers, 'managerId');
+      const segmentName = findName(data.segments, state.actionPlanSegmentId);
+      const managerName = findName(data.managers, state.actionPlanManagerId);
+      const productName = findName(data.products, state.actionPlanProductId);
       const stage = document.createElement('div');
       stage.className = 'focused-pdf-export action-plan-pdf-export';
       stage.setAttribute('aria-hidden', 'true');
       stage.innerHTML = `
         <div class="focused-pdf-header">
-          <h1 class="focused-pdf-title">${esc(String(state.actionPlanTitle || '').trim() || 'Plano de Ação')}</h1>
+          <h1 class="focused-pdf-title">Plano de Ação</h1>
           <div class="action-plan-print-meta">
-            <strong>Segmento:</strong> ${esc(segments.join(', ') || 'Não informado')}
-            <strong>Gerente:</strong> ${esc(managers.join(', ') || 'Não informado')}
+            <strong>Segmento:</strong> ${esc(segmentName)}
+            <strong>Gerente:</strong> ${esc(managerName)}
+            <strong>Produto:</strong> ${esc(productName)}
           </div>
         </div>
         <div class="action-plan-print-list"></div>
@@ -4201,9 +4218,9 @@
           return `<section class="action-plan-print-card">
             <h2>${index + 1}. ${esc(action.opportunity || 'Oportunidade sem nome')}</h2>
             <div class="action-plan-print-meta">
-              <span><strong>Segmento:</strong> ${esc(findName(data.segments, action.segmentId))}</span>
-              <span><strong>Gerente:</strong> ${esc(findName(data.managers, action.managerId))}</span>
-              <span><strong>Produto:</strong> ${esc(findName(data.products, action.productId))}</span>
+              <span><strong>Segmento:</strong> ${esc(segmentName)}</span>
+              <span><strong>Gerente:</strong> ${esc(managerName)}</span>
+              <span><strong>Produto:</strong> ${esc(productName)}</span>
               <span><strong>Período:</strong> ${esc(action.startDate ? fmtDate(action.startDate) : 'Não informado')} a ${esc(action.endDate ? fmtDate(action.endDate) : 'Não informado')}</span>
             </div>
             ${action.text ? `<p class="action-plan-print-text">${esc(action.text)}</p>` : ''}
@@ -4565,11 +4582,18 @@
     }
 
     function renderActionPlans() {
-      const title = document.getElementById('actionPlanTitle');
       const list = document.getElementById('actionPlanList');
-      if (!title || !list) return;
-      title.value = state.actionPlanTitle || '';
+      const segmentSelect = document.getElementById('actionPlanSegment');
+      const managerSelect = document.getElementById('actionPlanManager');
+      const productSelect = document.getElementById('actionPlanProduct');
+      if (!list || !segmentSelect || !managerSelect || !productSelect) return;
       const data = commercialData();
+      const contextManagers = state.actionPlanSegmentId
+        ? data.managers.filter(manager => manager.segmentId === state.actionPlanSegmentId)
+        : data.managers;
+      segmentSelect.innerHTML = actionPlanOptions(data.segments, state.actionPlanSegmentId, 'Selecione o segmento');
+      managerSelect.innerHTML = actionPlanOptions(contextManagers, state.actionPlanManagerId, 'Selecione o gerente');
+      productSelect.innerHTML = actionPlanOptions(data.products, state.actionPlanProductId, 'Selecione o produto');
       const actions = Array.isArray(state.actionPlans) ? state.actionPlans : [];
       if (!actions.length) {
         list.innerHTML = '<div class="action-plan-empty">Nenhuma oportunidade cadastrada. Clique em “Adicionar oportunidade” para começar.</div>';
@@ -4577,25 +4601,26 @@
       }
 
       list.innerHTML = actions.map((action, index) => {
-        const managers = action.segmentId
-          ? data.managers.filter(manager => manager.segmentId === action.segmentId)
-          : data.managers;
         const evolution = actionPlanEvolution(action);
-        return `<article class="action-plan-card" data-action-id="${esc(action.id)}">
+        const expanded = expandedActionPlans.has(action.id);
+        const summary = String(action.opportunity || '').trim() || 'Oportunidade sem nome';
+        return `<article class="action-plan-card ${expanded ? '' : 'collapsed'}" data-action-id="${esc(action.id)}">
           <button class="action-plan-drag no-print" type="button" draggable="true" aria-label="Arrastar oportunidade ${index + 1}" title="Arraste para reordenar">⋮⋮</button>
           <div class="action-plan-content">
             <div class="action-plan-card-head">
-              <span class="action-plan-order">Ação ${index + 1}</span>
+              <div class="action-plan-card-head-main">
+                <button class="icon-btn action-plan-toggle" type="button" aria-expanded="${expanded ? 'true' : 'false'}" aria-label="${expanded ? 'Minimizar' : 'Expandir'} ação ${index + 1}" title="${expanded ? 'Minimizar' : 'Expandir'}">${expanded ? '−' : '+'}</button>
+                <span class="action-plan-order">Ação ${index + 1}</span>
+                <span class="action-plan-summary" title="${esc(summary)}">${esc(summary)}</span>
+              </div>
               <div class="no-print">
                 <button class="icon-btn move-action-up" type="button" title="Mover para cima" aria-label="Mover ação para cima" ${index === 0 ? 'disabled' : ''}>↑</button>
                 <button class="icon-btn move-action-down" type="button" title="Mover para baixo" aria-label="Mover ação para baixo" ${index === actions.length - 1 ? 'disabled' : ''}>↓</button>
                 <button class="icon-btn delete-action-plan" type="button" title="Excluir oportunidade" aria-label="Excluir oportunidade">×</button>
               </div>
             </div>
+            <div class="action-plan-content-body">
             <div class="action-plan-grid">
-              <div class="action-plan-field"><label>Segmento</label><select data-action-field="segmentId">${actionPlanOptions(data.segments, action.segmentId, 'Selecione o segmento')}</select></div>
-              <div class="action-plan-field"><label>Gerente</label><select data-action-field="managerId">${actionPlanOptions(managers, action.managerId, 'Selecione o gerente')}</select></div>
-              <div class="action-plan-field"><label>Produto</label><select data-action-field="productId">${actionPlanOptions(data.products, action.productId, 'Selecione o produto')}</select></div>
               <div class="action-plan-field wide"><label>Nome da oportunidade</label><input data-action-field="opportunity" type="text" value="${esc(action.opportunity)}" placeholder="Nome da oportunidade" /></div>
               <div class="action-plan-field wide"><label>Texto livre</label><textarea data-action-field="text" placeholder="Descreva a ação, responsáveis, próximos passos ou observações">${esc(action.text)}</textarea></div>
               <div class="action-plan-field"><label>Data de início</label><input data-action-field="startDate" type="date" value="${esc(action.startDate)}" /></div>
@@ -4606,6 +4631,7 @@
                 <div class="action-plan-field"><label>${action.measureType === 'quantity' ? 'Quantidade atual' : 'Valor atual'}</label><input data-action-field="currentValue" type="number" step="0.01" value="${esc(action.currentValue)}" /></div>
                 <div class="action-plan-field"><label>% de evolução</label><div class="action-plan-evolution">${evolution === null ? '—' : fmtPct(evolution, 1)}</div></div>
               </div>
+            </div>
             </div>
           </div>
         </article>`;
@@ -4842,17 +4868,37 @@
       state.managers.push({ id: makeId(), name: '', cardObj: '', cardReal: '', prevObj: '', prevReal: '', varejoObj: '', varejoReal: '', primeObj: '', primeReal: '' }); saveState(); renderManagers();
     });
 
-    document.getElementById('actionPlanTitle').addEventListener('input', event => {
-      state.actionPlanTitle = event.target.value;
-      saveState();
+    ['actionPlanSegment', 'actionPlanManager', 'actionPlanProduct'].forEach(id => {
+      document.getElementById(id).addEventListener('change', event => {
+        const fieldById = {
+          actionPlanSegment: 'actionPlanSegmentId',
+          actionPlanManager: 'actionPlanManagerId',
+          actionPlanProduct: 'actionPlanProductId'
+        };
+        state[fieldById[id]] = event.target.value;
+        if (id === 'actionPlanSegment') {
+          const manager = commercialData().managers.find(item => item.id === state.actionPlanManagerId);
+          if (manager && manager.segmentId !== state.actionPlanSegmentId) state.actionPlanManagerId = '';
+        }
+        state.actionPlans.forEach(action => {
+          action.segmentId = state.actionPlanSegmentId;
+          action.managerId = state.actionPlanManagerId;
+          action.productId = state.actionPlanProductId;
+        });
+        saveState();
+        renderActionPlans();
+      });
     });
 
     document.getElementById('addActionPlanBtn').addEventListener('click', () => {
       if (!Array.isArray(state.actionPlans)) state.actionPlans = [];
+      const id = makeId();
       state.actionPlans.push({
-        id: makeId(), segmentId: '', managerId: '', productId: '', opportunity: '', text: '',
+        id, segmentId: state.actionPlanSegmentId, managerId: state.actionPlanManagerId, productId: state.actionPlanProductId, opportunity: '', text: '',
         startDate: '', endDate: '', measureType: 'value', initialValue: '', currentValue: ''
       });
+      expandedActionPlans.clear();
+      expandedActionPlans.add(id);
       saveState();
       renderActionPlans();
       document.querySelector('#actionPlanList .action-plan-card:last-child')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -4869,6 +4915,12 @@
         const evolution = actionPlanEvolution(action);
         card.querySelector('.action-plan-evolution').textContent = evolution === null ? '—' : fmtPct(evolution, 1);
       }
+      if (field === 'opportunity') {
+        const summary = String(action.opportunity || '').trim() || 'Oportunidade sem nome';
+        const summaryElement = card.querySelector('.action-plan-summary');
+        summaryElement.textContent = summary;
+        summaryElement.title = summary;
+      }
     });
 
     document.getElementById('actionPlanList').addEventListener('change', event => {
@@ -4877,12 +4929,8 @@
       const action = state.actionPlans.find(item => item.id === card?.dataset.actionId);
       if (!field || !action) return;
       action[field] = event.target.value;
-      if (field === 'segmentId') {
-        const manager = commercialData().managers.find(item => item.id === action.managerId);
-        if (manager && manager.segmentId !== action.segmentId) action.managerId = '';
-      }
       saveState();
-      if (['segmentId', 'measureType'].includes(field)) renderActionPlans();
+      if (field === 'measureType') renderActionPlans();
     });
 
     document.getElementById('actionPlanList').addEventListener('click', event => {
@@ -4890,8 +4938,14 @@
       if (!card) return;
       const index = state.actionPlans.findIndex(item => item.id === card.dataset.actionId);
       if (index < 0) return;
-      if (event.target.closest('.delete-action-plan')) {
+      if (event.target.closest('.action-plan-card-head-main')) {
+        if (expandedActionPlans.has(card.dataset.actionId)) expandedActionPlans.delete(card.dataset.actionId);
+        else expandedActionPlans.add(card.dataset.actionId);
+        renderActionPlans();
+        return;
+      } else if (event.target.closest('.delete-action-plan')) {
         if (!confirm('Excluir esta oportunidade do Plano de Ação?')) return;
+        expandedActionPlans.delete(card.dataset.actionId);
         state.actionPlans.splice(index, 1);
       } else if (event.target.closest('.move-action-up') && index > 0) {
         [state.actionPlans[index - 1], state.actionPlans[index]] = [state.actionPlans[index], state.actionPlans[index - 1]];
