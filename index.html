@@ -692,7 +692,9 @@
     .commercial-input-table { min-width: 700px; }
     .commercial-input-table input { min-width: 150px; text-align: right; }
     .commercial-input-table .f-log-visibility-head,
-    .commercial-input-table .f-log-visibility-cell {
+    .commercial-input-table .f-log-visibility-cell,
+    #scoreTable .f-log-visibility-head,
+    #scoreTable .f-log-visibility-cell {
       width: 66px;
       min-width: 66px;
       text-align: center;
@@ -734,10 +736,13 @@
       background: #f3f5f7;
       color: #737b85;
     }
-    .commercial-input-table tr.f-log-hidden-row td {
+    .commercial-input-table tr.f-log-hidden-row td,
+    #scoreTable tr.f-log-hidden-row td {
       background: #f3f5f7;
+      color: #737b85;
     }
-    .commercial-input-table tr.f-log-hidden-row input {
+    .commercial-input-table tr.f-log-hidden-row input,
+    #scoreTable tr.f-log-hidden-row input {
       background: #e5e9ee;
       color: #707985;
       border-color: #cfd5dc;
@@ -747,15 +752,18 @@
     .commercial-input-table tr.f-log-hidden-row .entry-pct {
       color: #7b838d;
     }
-    .commercial-input-table tr.f-log-hidden-start td {
+    .commercial-input-table tr.f-log-hidden-start td,
+    #scoreTable tr.f-log-hidden-start td {
       border-top: 3px solid #aeb5be;
     }
-    .commercial-input-table tr.f-log-hidden-row .f-log-visibility-btn {
+    .commercial-input-table tr.f-log-hidden-row .f-log-visibility-btn,
+    #scoreTable tr.f-log-hidden-row .f-log-visibility-btn {
       border-color: #b8c0ca;
       background: #e8ecf0;
       color: #5e6874;
     }
-    .commercial-input-table tr.f-log-hidden-row .f-log-visibility-btn:hover {
+    .commercial-input-table tr.f-log-hidden-row .f-log-visibility-btn:hover,
+    #scoreTable tr.f-log-hidden-row .f-log-visibility-btn:hover {
       border-color: var(--brand);
       background: #fff6f7;
       color: var(--brand);
@@ -1866,6 +1874,24 @@
         grid-column: 1 / -1;
       }
 
+      #scoreTable .f-log-visibility-cell {
+        grid-column: 1 / -1;
+        width: auto;
+        min-width: 0;
+        padding-top: 4px;
+      }
+
+      #scoreTable .f-log-visibility-btn {
+        width: 100%;
+        height: 48px;
+        min-height: 48px;
+        font-weight: 800;
+      }
+
+      #scoreTable .f-log-visibility-text { display: inline; }
+
+      #scoreTable tr.f-log-hidden-start { margin-top: 10px; }
+
       .commercial-priority-table tbody td:nth-child(1) {
         position: absolute;
         top: 9px;
@@ -2248,7 +2274,7 @@
             </div>
             <div class="table-wrap no-print">
               <table id="scoreTable">
-                <thead><tr><th>Gerente</th><th>Pontuação atual</th><th>Pontuação informada</th></tr></thead>
+                <thead><tr><th>Gerente</th><th>Pontuação atual</th><th>Pontuação informada</th><th class="f-log-visibility-head">Exibição</th></tr></thead>
                 <tbody></tbody>
               </table>
             </div>
@@ -3092,7 +3118,8 @@
           managerId: manager.id,
           name: manager.name,
           current: score?.current ?? '',
-          informed: score?.informed ?? ''
+          informed: score?.informed ?? '',
+          hidden: Boolean(score?.hidden)
         };
       });
       return state.scores;
@@ -3104,12 +3131,23 @@
       document.querySelectorAll('.chart-title')[0].textContent = `Pontuação — ${state.groupTitle || 'Grupo'}`;
       document.querySelectorAll('.chart-title')[1].textContent = `Informado — ${state.groupTitle || 'Grupo'}`;
       const body = document.querySelector('#scoreTable tbody');
-      body.innerHTML = state.scores.length ? state.scores.map(row => `
-        <tr data-id="${row.id}" data-manager-id="${esc(row.managerId)}">
+      const orderedScores = [...state.scores].sort((a,b) => Number(Boolean(a.hidden)) - Number(Boolean(b.hidden)));
+      let hiddenSectionStarted = false;
+      body.innerHTML = orderedScores.length ? orderedScores.map(row => {
+        const hidden = Boolean(row.hidden);
+        const hiddenStart = hidden && !hiddenSectionStarted;
+        if (hiddenStart) hiddenSectionStarted = true;
+        const actionLabel = hidden ? `Desocultar ${row.name}` : `Ocultar ${row.name}`;
+        const actionText = hidden ? 'Desocultar gerente' : 'Ocultar gerente';
+        const disabled = hidden ? 'disabled aria-disabled="true"' : '';
+        return `
+        <tr class="${hidden ? 'f-log-hidden-row' : ''} ${hiddenStart ? 'f-log-hidden-start' : ''}" data-id="${row.id}" data-manager-id="${esc(row.managerId)}" data-hidden="${hidden ? 'true' : 'false'}" ${hidden ? 'aria-disabled="true"' : ''}>
           <td class="name-cell"><span class="score-manager-name">${esc(row.name)}</span></td>
-          <td><input data-field="current" type="number" step="0.01" value="${esc(row.current)}" /></td>
-          <td><input data-field="informed" type="number" step="0.01" value="${esc(row.informed)}" /></td>
-        </tr>`).join('') : '<tr><td colspan="3" class="commercial-empty">Cadastre ao menos um gerente na subaba Cadastros.</td></tr>';
+          <td><input data-field="current" type="number" step="0.01" value="${esc(row.current)}" ${disabled} /></td>
+          <td><input data-field="informed" type="number" step="0.01" value="${esc(row.informed)}" ${disabled} /></td>
+          <td class="f-log-visibility-cell"><button type="button" class="f-log-visibility-btn" data-toggle-score-visibility aria-label="${esc(actionLabel)}" aria-pressed="${hidden ? 'true' : 'false'}" title="${esc(actionLabel)}">${commercialVisibilityIcon(hidden)}<span class="f-log-visibility-text">${esc(actionText)}</span></button></td>
+        </tr>`;
+      }).join('') : '<tr><td colspan="4" class="commercial-empty">Cadastre ao menos um gerente na subaba Cadastros.</td></tr>';
       renderBarChart('currentChart', 'current', false);
       renderBarChart('informedChart', 'informed', true);
     }
@@ -3117,7 +3155,7 @@
     function renderBarChart(containerId, field, gray) {
       const container = document.getElementById(containerId);
       const data = state.scores
-        .filter(x => String(x.name || '').trim() && Number.isFinite(Number(x[field])))
+        .filter(x => !x.hidden && String(x.name || '').trim() && Number.isFinite(Number(x[field])))
         .map(x => ({ name: x.name, value: toNumber(x[field]) }))
         .sort((a,b) => b.value - a.value);
       if (!data.length) { container.innerHTML = '<div class="empty-state">Nenhum dado informado.</div>'; return; }
@@ -4470,6 +4508,20 @@
     document.querySelector('#scoreTable tbody').addEventListener('input', e => {
       const tr = e.target.closest('tr'); if (!tr || !e.target.dataset.field) return;
       updateCollection('scores', tr.dataset.id, e.target.dataset.field, e.target.value);
+    });
+
+    document.querySelector('#scoreTable tbody').addEventListener('click', e => {
+      const visibilityButton = e.target.closest('[data-toggle-score-visibility]');
+      if (!visibilityButton) return;
+      const tr = visibilityButton.closest('tr[data-id]');
+      const score = state.scores.find(row => row.id === tr?.dataset.id);
+      if (!score) return;
+      score.hidden = !Boolean(score.hidden);
+      saveState();
+      renderScores();
+      toast(score.hidden
+        ? `${score.name || 'Gerente'} ocultado da pontuação e dos gráficos.`
+        : `${score.name || 'Gerente'} restaurado na pontuação e nos gráficos.`);
     });
 
     document.querySelector('#refTable tbody').addEventListener('input', e => {
