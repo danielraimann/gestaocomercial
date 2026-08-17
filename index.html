@@ -918,6 +918,34 @@
     .action-plan-print-text { margin: 6px 0; white-space: pre-wrap; font-size: 12px; line-height: 1.25; }
     .action-plan-print-progress { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 6px; }
     .action-plan-print-progress span { background: #f1f3f5; border-radius: 5px; padding: 6px; font-size: 11px; }
+    .treatment-header { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px; }
+    .treatment-header h3 { margin:0 0 4px; }
+    .treatment-kpis { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin-bottom:16px; }
+    .treatment-kpi { padding:13px 14px; border:1px solid var(--line); border-radius:11px; background:#f8f9fb; }
+    .treatment-kpi span { display:block; color:var(--muted); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
+    .treatment-kpi strong { display:block; margin-top:5px; color:var(--text); font-size:23px; }
+    .treatment-table { min-width:1280px; }
+    .treatment-table td { vertical-align:middle; }
+    .treatment-name { min-width:170px; font-weight:800; }
+    .treatment-progress { min-width:120px; }
+    .treatment-progress-track { height:8px; overflow:hidden; border-radius:999px; background:#e3e6ea; }
+    .treatment-progress-bar { height:100%; border-radius:inherit; background:var(--brand); }
+    .treatment-progress-label { display:block; margin-top:4px; text-align:right; font-size:11px; font-weight:800; }
+    .treatment-variation.positive { color:var(--green); font-weight:900; }
+    .treatment-variation.negative { color:var(--red); font-weight:900; }
+    .treatment-variation.neutral { color:var(--muted); font-weight:800; }
+    .treatment-status { display:inline-flex; padding:5px 9px; border-radius:999px; font-size:11px; font-weight:900; white-space:nowrap; }
+    .treatment-status.active { background:#e8f4ff; color:#185985; }
+    .treatment-status.done { background:var(--ok-bg); color:var(--ok-text); }
+    .treatment-status.expired { background:var(--bad-bg); color:var(--bad-text); }
+    .treatment-actions { display:flex; gap:6px; flex-wrap:wrap; min-width:235px; }
+    .treatment-actions .btn { padding:7px 9px; }
+    .treatment-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:13px; }
+    .treatment-form-grid .wide { grid-column:1 / -1; }
+    .treatment-history-list { display:grid; gap:8px; }
+    .treatment-history-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; padding:10px 12px; border:1px solid var(--line); border-radius:9px; }
+    .treatment-history-row span { color:var(--muted); font-size:11px; }
+    .treatment-history-row strong { display:block; margin-top:2px; }
     .setup-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1143,6 +1171,16 @@
       .modal-actions .btn { width: 100%; }
       .commercial-subtabs { overflow-x: auto; flex-wrap: nowrap; }
       .commercial-subtab { flex: 0 0 auto; }
+      .treatment-header { align-items:stretch; flex-direction:column; }
+      .treatment-header .btn { width:100%; }
+      .treatment-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .treatment-kpi:last-child { grid-column:1 / -1; }
+      .treatment-kpi strong { font-size:20px; }
+      .treatment-form-grid { grid-template-columns:1fr; }
+      .treatment-form-grid .wide { grid-column:auto; }
+      .treatment-actions { min-width:0; width:100%; }
+      .treatment-actions .btn { flex:1; min-width:88px; }
+      .treatment-history-row { grid-template-columns:1fr; }
     }
 
     @media print {
@@ -2411,6 +2449,7 @@
           <button class="commercial-subtab" data-commercial-view="commercialPriorityView">Prioritários</button>
           <button class="commercial-subtab" data-commercial-view="commercialInputView">F-LOG</button>
           <button class="commercial-subtab" data-commercial-view="commercialActionPlanView">Plano de Ação</button>
+          <button class="commercial-subtab" data-commercial-view="commercialTreatmentsView">Tratativas</button>
           <button class="commercial-subtab" data-commercial-view="commercialConfigView">Cadastros</button>
           <button class="commercial-subtab" data-commercial-view="commercialReferencesView">Referências</button>
         </div>
@@ -2600,6 +2639,25 @@
           </div>
         </div>
 
+        <div id="commercialTreatmentsView" class="commercial-view">
+          <div class="card-body">
+            <div class="treatment-header">
+              <div>
+                <h3>Tratativas</h3>
+                <p class="hint">Acompanhe o avanço das tratativas e a necessidade diária até o fim do mês.</p>
+              </div>
+              <button class="btn dark small no-print" id="addTreatmentBtn" type="button">Nova tratativa</button>
+            </div>
+            <div class="treatment-kpis" id="treatmentKpis"></div>
+            <div class="table-wrap">
+              <table class="treatment-table" id="treatmentTable">
+                <thead><tr><th>Tratativa</th><th>Indicados</th><th>Tratado atual</th><th>Data</th><th>Último total</th><th>Variação</th><th>Restante</th><th>Dias úteis</th><th>Necessidade diária</th><th>Progresso</th><th>Status</th><th class="no-print">Ações</th></tr></thead>
+                <tbody id="treatmentBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <div id="commercialConfigView" class="commercial-view">
           <div class="card-body">
             <p class="soft-note">Cadastre e edite produtos, segmentos e gerentes. Marque os produtos que devem aparecer em Prioritários. Marque um gerente como “linha mãe” para que ele ocupe a linha principal em negrito. É permitido um gerente mãe por segmento.</p>
@@ -2740,6 +2798,33 @@
     </section>
   </main>
 
+  <div id="treatmentModal" class="modal-backdrop" hidden>
+    <form class="modal-dialog" id="treatmentForm" role="dialog" aria-modal="true" aria-labelledby="treatmentModalTitle">
+      <div class="modal-head">
+        <div><h2 id="treatmentModalTitle">Nova tratativa</h2><p class="hint">Informe o total acumulado na data selecionada.</p></div>
+        <button class="modal-close" id="treatmentCloseBtn" type="button" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <input id="treatmentId" type="hidden" />
+        <div class="treatment-form-grid">
+          <div class="field wide"><label for="treatmentName">Nome da tratativa</label><input id="treatmentName" type="text" maxlength="120" required /></div>
+          <div class="field"><label for="treatmentIndicated">Quantidade indicada</label><input id="treatmentIndicated" type="number" min="0" step="1" inputmode="numeric" required /></div>
+          <div class="field"><label for="treatmentTotal">Total tratado</label><input id="treatmentTotal" type="number" min="0" step="1" inputmode="numeric" required /></div>
+          <div class="field wide"><label for="treatmentDate">Data do preenchimento</label><input id="treatmentDate" type="date" required /></div>
+        </div>
+      </div>
+      <div class="modal-actions"><button class="btn dark" id="treatmentCancelBtn" type="button">Cancelar</button><button class="btn primary" type="submit">Salvar tratativa</button></div>
+    </form>
+  </div>
+
+  <div id="treatmentHistoryModal" class="modal-backdrop" hidden>
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="treatmentHistoryTitle">
+      <div class="modal-head"><div><h2 id="treatmentHistoryTitle">Histórico</h2><p class="hint" id="treatmentHistorySubtitle"></p></div><button class="modal-close" id="treatmentHistoryCloseBtn" type="button" aria-label="Fechar">×</button></div>
+      <div class="modal-body"><div class="treatment-history-list" id="treatmentHistoryList"></div></div>
+      <div class="modal-actions"><button class="btn dark" id="treatmentHistoryDoneBtn" type="button">Fechar</button></div>
+    </div>
+  </div>
+
   <div id="resetModal" class="modal-backdrop" hidden>
     <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="resetModalTitle">
       <div class="modal-head">
@@ -2875,6 +2960,7 @@
       actionPlanManagerId: '',
       actionPlanProductId: '',
       actionPlans: [],
+      commercialTreatments: [],
       commercialFilterPresets: [],
       managerArea: { records: {} },
       analysisDate: '2026-08-07',
@@ -3038,6 +3124,22 @@
           managers: [...new Set(Array.isArray(item.managers) ? item.managers.map(String).filter(id => validFilterIds.managers.has(id)) : [])]
         }))
         : [];
+      const commercialTreatments = Array.isArray(base.commercialTreatments) ? base.commercialTreatments
+        .filter(item => item && item.id)
+        .map(item => {
+          const byDate = new Map();
+          (Array.isArray(item.history) ? item.history : []).forEach(record => {
+            const date = String(record?.date || '');
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+            byDate.set(date, { date, total: Math.max(0, toNumber(record.total)) });
+          });
+          return {
+            id: String(item.id),
+            name: String(item.name || ''),
+            indicated: Math.max(0, toNumber(item.indicated)),
+            history: [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date))
+          };
+        }) : [];
       return {
         ...base,
         commercial,
@@ -3046,6 +3148,7 @@
         actionPlanManagerId: String(base.actionPlanManagerId || firstAction.managerId || ''),
         actionPlanProductId: String(base.actionPlanProductId || firstAction.productId || ''),
         actionPlans,
+        commercialTreatments,
         commercialFilterPresets,
         managerArea: normalizeManagerArea(base.managerArea),
         commercialReferences: normalizeCommercialReferences(base.commercialReferences, base.references, commercial)
@@ -4812,6 +4915,103 @@
       }).join('');
     }
 
+    function localIsoDate(date = new Date()) {
+      const pad = value => String(value).padStart(2, '0');
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    }
+
+    function treatmentBusinessDaysRemaining(today = new Date()) {
+      const cursor = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      let total = 0;
+      while (cursor <= last) {
+        const day = cursor.getDay();
+        if (day !== 0 && day !== 6) total += 1;
+        cursor.setDate(cursor.getDate() + 1);
+      }
+      return total;
+    }
+
+    function treatmentMetrics(item, businessDays = treatmentBusinessDaysRemaining()) {
+      const history = [...(item.history || [])].sort((a, b) => a.date.localeCompare(b.date));
+      const current = history.at(-1) || { date: '', total: 0 };
+      const previous = history.at(-2) || null;
+      const indicated = Math.max(0, toNumber(item.indicated));
+      const treated = Math.max(0, toNumber(current.total));
+      const previousTotal = previous ? Math.max(0, toNumber(previous.total)) : 0;
+      const variation = previous ? treated - previousTotal : 0;
+      const remaining = Math.max(indicated - treated, 0);
+      const progress = indicated > 0 ? Math.min(treated / indicated * 100, 100) : (treated > 0 ? 100 : 0);
+      const status = treated >= indicated ? 'Concluída' : businessDays === 0 && remaining > 0 ? 'Prazo encerrado' : 'Ativa';
+      const dailyNeed = status === 'Concluída' ? 0 : businessDays > 0 ? Math.ceil(remaining / businessDays) : null;
+      return { history, current, previous, indicated, treated, previousTotal, variation, remaining, progress, status, dailyNeed, businessDays };
+    }
+
+    function renderTreatments() {
+      const body = document.getElementById('treatmentBody');
+      const kpis = document.getElementById('treatmentKpis');
+      if (!body || !kpis) return;
+      const businessDays = treatmentBusinessDaysRemaining();
+      const items = (state.commercialTreatments || []).map(item => ({ item, metrics: treatmentMetrics(item, businessDays) }))
+        .sort((a, b) => Number(a.metrics.status === 'Concluída') - Number(b.metrics.status === 'Concluída') || a.item.name.localeCompare(b.item.name, 'pt-BR'));
+      const totals = items.reduce((sum, row) => ({
+        indicated: sum.indicated + row.metrics.indicated,
+        treated: sum.treated + row.metrics.treated,
+        remaining: sum.remaining + row.metrics.remaining
+      }), { indicated: 0, treated: 0, remaining: 0 });
+      const active = items.filter(row => row.metrics.status === 'Ativa').length;
+      kpis.innerHTML = [
+        ['Itens ativos', active], ['Total indicado', fmt(totals.indicated, 0)], ['Total tratado', fmt(totals.treated, 0)],
+        ['Total restante', fmt(totals.remaining, 0)], ['Dias úteis restantes', businessDays]
+      ].map(([label, value]) => `<div class="treatment-kpi"><span>${label}</span><strong>${value}</strong></div>`).join('');
+      if (!items.length) {
+        body.innerHTML = '<tr><td colspan="12" class="commercial-empty">Nenhuma tratativa cadastrada. Clique em “Nova tratativa” para começar.</td></tr>';
+        return;
+      }
+      body.innerHTML = items.map(({ item, metrics }) => {
+        const variationClass = metrics.variation > 0 ? 'positive' : metrics.variation < 0 ? 'negative' : 'neutral';
+        const variationText = `${metrics.variation > 0 ? '+' : ''}${fmt(metrics.variation, 0)}`;
+        const statusClass = metrics.status === 'Concluída' ? 'done' : metrics.status === 'Prazo encerrado' ? 'expired' : 'active';
+        return `<tr data-treatment-id="${esc(item.id)}">
+          <td class="treatment-name">${esc(item.name)}</td><td class="num">${fmt(metrics.indicated, 0)}</td><td class="num">${fmt(metrics.treated, 0)}</td>
+          <td>${metrics.current.date ? fmtDate(metrics.current.date) : '—'}</td><td class="num">${metrics.previous ? fmt(metrics.previousTotal, 0) : '—'}</td>
+          <td class="num treatment-variation ${variationClass}">${variationText}</td><td class="num">${fmt(metrics.remaining, 0)}</td><td class="num">${metrics.businessDays}</td>
+          <td class="num">${metrics.dailyNeed === null ? '—' : `${fmt(metrics.dailyNeed, 0)}/dia`}</td>
+          <td><div class="treatment-progress"><div class="treatment-progress-track"><div class="treatment-progress-bar" style="width:${metrics.progress}%"></div></div><span class="treatment-progress-label">${fmtPct(metrics.progress, 0)}</span></div></td>
+          <td><span class="treatment-status ${statusClass}">${metrics.status}</span></td>
+          <td class="no-print"><div class="treatment-actions"><button class="btn dark small update-treatment" type="button">Atualizar</button><button class="btn dark small history-treatment" type="button">Histórico</button><button class="btn danger small delete-treatment" type="button">Excluir</button></div></td>
+        </tr>`;
+      }).join('');
+    }
+
+    function closeTreatmentModal() { document.getElementById('treatmentModal').hidden = true; }
+    function openTreatmentModal(item = null) {
+      const metrics = item ? treatmentMetrics(item) : null;
+      const today = localIsoDate();
+      const todayRecord = item?.history?.find(record => record.date === today);
+      document.getElementById('treatmentModalTitle').textContent = item ? 'Atualizar tratativa' : 'Nova tratativa';
+      document.getElementById('treatmentId').value = item?.id || '';
+      document.getElementById('treatmentName').value = item?.name || '';
+      document.getElementById('treatmentIndicated').value = item ? metrics.indicated : '';
+      document.getElementById('treatmentDate').value = today;
+      document.getElementById('treatmentTotal').value = todayRecord ? todayRecord.total : (item ? metrics.treated : '');
+      document.getElementById('treatmentModal').hidden = false;
+      requestAnimationFrame(() => document.getElementById(item ? 'treatmentTotal' : 'treatmentName').focus());
+    }
+
+    function closeTreatmentHistory() { document.getElementById('treatmentHistoryModal').hidden = true; }
+    function openTreatmentHistory(item) {
+      const history = [...(item.history || [])].sort((a, b) => b.date.localeCompare(a.date));
+      document.getElementById('treatmentHistorySubtitle').textContent = item.name;
+      document.getElementById('treatmentHistoryList').innerHTML = history.length ? history.map((record, index) => {
+        const next = history[index + 1];
+        const variation = next ? toNumber(record.total) - toNumber(next.total) : 0;
+        const variationClass = variation > 0 ? 'positive' : variation < 0 ? 'negative' : 'neutral';
+        return `<div class="treatment-history-row"><div><span>Data</span><strong>${fmtDate(record.date)}</strong></div><div><span>Total tratado</span><strong>${fmt(record.total, 0)}</strong></div><div><span>Variação</span><strong class="treatment-variation ${variationClass}">${variation > 0 ? '+' : ''}${fmt(variation, 0)}</strong></div></div>`;
+      }).join('') : '<div class="commercial-empty">Nenhum lançamento registrado.</div>';
+      document.getElementById('treatmentHistoryModal').hidden = false;
+    }
+
     function renderCommercialConfig() {
       const data = commercialData();
       const productsBody = document.querySelector('#commercialProductsTable tbody');
@@ -4853,6 +5053,7 @@
       renderCommercialManagerSelector();
       renderCommercialInput();
       renderActionPlans();
+      renderTreatments();
       renderCommercialConfig();
     }
 
@@ -5250,6 +5451,7 @@
       if (commercialUi.view === 'commercialPriorityView') { renderCommercialFilters(); renderCommercialPriorities(); }
       if (commercialUi.view === 'commercialInputView') { renderCommercialManagerSelector(); renderCommercialInput(); }
       if (commercialUi.view === 'commercialActionPlanView') renderActionPlans();
+      if (commercialUi.view === 'commercialTreatmentsView') renderTreatments();
       if (commercialUi.view === 'commercialConfigView') renderCommercialConfig();
       if (commercialUi.view === 'commercialReferencesView') renderReferences();
     }));
@@ -5354,6 +5556,54 @@
     document.getElementById('scorePdfBtn').addEventListener('click', generateScorePdf);
     document.getElementById('commercialPriorityPdfBtn').addEventListener('click', generatePriorityPdf);
     document.getElementById('actionPlanPdfBtn').addEventListener('click', generateActionPlanPdf);
+
+    const treatmentModal = document.getElementById('treatmentModal');
+    const treatmentHistoryModal = document.getElementById('treatmentHistoryModal');
+    document.getElementById('addTreatmentBtn').addEventListener('click', () => openTreatmentModal());
+    document.getElementById('treatmentCloseBtn').addEventListener('click', closeTreatmentModal);
+    document.getElementById('treatmentCancelBtn').addEventListener('click', closeTreatmentModal);
+    document.getElementById('treatmentHistoryCloseBtn').addEventListener('click', closeTreatmentHistory);
+    document.getElementById('treatmentHistoryDoneBtn').addEventListener('click', closeTreatmentHistory);
+    treatmentModal.addEventListener('click', event => { if (event.target === treatmentModal) closeTreatmentModal(); });
+    treatmentHistoryModal.addEventListener('click', event => { if (event.target === treatmentHistoryModal) closeTreatmentHistory(); });
+    document.getElementById('treatmentForm').addEventListener('submit', event => {
+      event.preventDefault();
+      const id = document.getElementById('treatmentId').value;
+      const name = document.getElementById('treatmentName').value.trim();
+      const indicated = Number(document.getElementById('treatmentIndicated').value);
+      const total = Number(document.getElementById('treatmentTotal').value);
+      const date = document.getElementById('treatmentDate').value;
+      if (!name || !date || !Number.isFinite(indicated) || indicated < 0 || !Number.isFinite(total) || total < 0) return alert('Preencha nome, quantidades não negativas e uma data válida.');
+      let item = (state.commercialTreatments || []).find(entry => entry.id === id);
+      if (!item) {
+        item = { id: makeId(), name, indicated, history: [] };
+        state.commercialTreatments.push(item);
+      }
+      item.name = name;
+      item.indicated = indicated;
+      const existing = item.history.find(record => record.date === date);
+      if (existing) existing.total = total;
+      else item.history.push({ date, total });
+      item.history.sort((a, b) => a.date.localeCompare(b.date));
+      saveState();
+      closeTreatmentModal();
+      renderTreatments();
+      toast(existing ? 'Lançamento da data atualizado.' : 'Tratativa salva.');
+    });
+    document.getElementById('treatmentBody').addEventListener('click', event => {
+      const row = event.target.closest('tr[data-treatment-id]');
+      const item = row && state.commercialTreatments.find(entry => entry.id === row.dataset.treatmentId);
+      if (!item) return;
+      if (event.target.closest('.update-treatment')) openTreatmentModal(item);
+      else if (event.target.closest('.history-treatment')) openTreatmentHistory(item);
+      else if (event.target.closest('.delete-treatment')) {
+        if (!confirm(`Excluir a tratativa "${item.name}" e todo o histórico dela?`)) return;
+        state.commercialTreatments = state.commercialTreatments.filter(entry => entry.id !== item.id);
+        saveState();
+        renderTreatments();
+        toast('Tratativa excluída.');
+      }
+    });
 
     document.getElementById('commercialPriorityDate').addEventListener('change', event => {
       const validDates = commercialPriorityReferenceDates();
@@ -5802,6 +6052,7 @@
           '.commercial-table',
           '.commercial-priority-table',
           '.commercial-input-table',
+          '.treatment-table',
           '.config-table',
           '#refTable'
         ].join(',')).forEach(enhanceTable);
