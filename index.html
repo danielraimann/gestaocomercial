@@ -920,6 +920,9 @@
     .action-plan-print-progress span { background: #f1f3f5; border-radius: 5px; padding: 6px; font-size: 11px; }
     .treatment-header { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px; }
     .treatment-header h3 { margin:0 0 4px; }
+    .treatment-header-actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .treatment-filters { display:grid; grid-template-columns:minmax(220px,1fr) minmax(260px,1.4fr) auto; gap:10px; align-items:end; margin-bottom:14px; padding:12px; border:1px solid var(--line); border-radius:11px; background:#f8f9fb; }
+    .treatment-filter-summary { align-self:center; color:var(--muted); font-size:12px; font-weight:700; white-space:nowrap; }
     .treatment-kpis { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin-bottom:16px; }
     .treatment-kpi { padding:13px 14px; border:1px solid var(--line); border-radius:11px; background:#f8f9fb; }
     .treatment-kpi span { display:block; color:var(--muted); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
@@ -946,6 +949,12 @@
     .treatment-history-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; padding:10px 12px; border:1px solid var(--line); border-radius:9px; }
     .treatment-history-row span { color:var(--muted); font-size:11px; }
     .treatment-history-row strong { display:block; margin-top:2px; }
+    .treatment-pdf-export .treatment-table { min-width:0; width:100%; table-layout:fixed; font-size:11px; }
+    .treatment-pdf-export .treatment-table th, .treatment-pdf-export .treatment-table td { padding:7px 6px; overflow-wrap:anywhere; }
+    .treatment-pdf-export .treatment-kpis { margin-bottom:10px; }
+    .treatment-pdf-export .treatment-kpi { padding:8px 10px; }
+    .treatment-pdf-export .treatment-kpi strong { font-size:17px; }
+    .treatment-pdf-export .treatment-actions { display:none; }
     .setup-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1172,7 +1181,10 @@
       .commercial-subtabs { overflow-x: auto; flex-wrap: nowrap; }
       .commercial-subtab { flex: 0 0 auto; }
       .treatment-header { align-items:stretch; flex-direction:column; }
+      .treatment-header-actions { display:grid; grid-template-columns:1fr 1fr; }
       .treatment-header .btn { width:100%; }
+      .treatment-filters { grid-template-columns:1fr; }
+      .treatment-filter-summary { white-space:normal; }
       .treatment-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
       .treatment-kpi:last-child { grid-column:1 / -1; }
       .treatment-kpi strong { font-size:20px; }
@@ -2646,12 +2658,20 @@
                 <h3>Tratativas</h3>
                 <p class="hint">Acompanhe o avanço das tratativas e a necessidade diária até o fim do mês.</p>
               </div>
-              <button class="btn dark small no-print" id="addTreatmentBtn" type="button">Nova tratativa</button>
+              <div class="treatment-header-actions no-print">
+                <button class="btn dark small" id="addTreatmentBtn" type="button">Nova tratativa</button>
+                <button class="btn dark small" id="treatmentPdfBtn" type="button">Gerar PDF</button>
+              </div>
+            </div>
+            <div class="treatment-filters no-print">
+              <div class="field"><label for="treatmentManagerFilter">Gerente</label><select id="treatmentManagerFilter"></select></div>
+              <div class="field"><label for="treatmentNameFilter">Nome da tratativa</label><input id="treatmentNameFilter" type="search" placeholder="Digite para filtrar" autocomplete="off" /></div>
+              <div class="treatment-filter-summary" id="treatmentFilterSummary"></div>
             </div>
             <div class="treatment-kpis" id="treatmentKpis"></div>
             <div class="table-wrap">
               <table class="treatment-table" id="treatmentTable">
-                <thead><tr><th>Tratativa</th><th>Indicados</th><th>Tratado atual</th><th>Data</th><th>Último total</th><th>Variação</th><th>Restante</th><th>Dias úteis</th><th>Necessidade diária</th><th>Progresso</th><th>Status</th><th class="no-print">Ações</th></tr></thead>
+                <thead><tr><th>Tratativa</th><th>Gerente</th><th>Indicados</th><th>Tratado atual</th><th>Data</th><th>Último total</th><th>Variação</th><th>Restante</th><th>Dias úteis</th><th>Necessidade diária</th><th>Progresso</th><th>Status</th><th class="no-print">Ações</th></tr></thead>
                 <tbody id="treatmentBody"></tbody>
               </table>
             </div>
@@ -2808,6 +2828,7 @@
         <input id="treatmentId" type="hidden" />
         <div class="treatment-form-grid">
           <div class="field wide"><label for="treatmentName">Nome da tratativa</label><input id="treatmentName" type="text" maxlength="120" required /></div>
+          <div class="field wide"><label for="treatmentManager">Gerente</label><select id="treatmentManager"><option value="">Gerente não informado</option></select></div>
           <div class="field"><label for="treatmentIndicated">Quantidade indicada</label><input id="treatmentIndicated" type="number" min="0" step="1" inputmode="numeric" required /></div>
           <div class="field"><label for="treatmentTotal">Total tratado</label><input id="treatmentTotal" type="number" min="0" step="1" inputmode="numeric" required /></div>
           <div class="field wide"><label for="treatmentDate">Data do preenchimento</label><input id="treatmentDate" type="date" required /></div>
@@ -3006,7 +3027,9 @@
       view: 'commercialScoreView',
       expanded: new Set(),
       filters: { products: new Set(), segments: new Set(), managers: new Set() },
-      selectedManagerId: ''
+      selectedManagerId: '',
+      treatmentManagerId: '',
+      treatmentName: ''
     };
     const managerUi = { period: 'daily', date: new Date().toISOString().slice(0,10), expanded: new Set() };
 
@@ -3136,6 +3159,7 @@
           return {
             id: String(item.id),
             name: String(item.name || ''),
+            managerId: String(item.managerId || ''),
             indicated: Math.max(0, toNumber(item.indicated)),
             history: [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date))
           };
@@ -4514,6 +4538,40 @@
       return stage;
     }
 
+    function buildTreatmentPdfStage() {
+      const sourceTable = document.getElementById('treatmentTable');
+      const sourceKpis = document.getElementById('treatmentKpis');
+      if (!sourceTable || !sourceKpis) throw new Error('Tabela de Tratativas não localizada.');
+      const table = cloneForFocusedPdf(sourceTable);
+      table.classList.remove('mobile-card-table');
+      const kpis = cloneForFocusedPdf(sourceKpis);
+      const selectedManager = commercialUi.treatmentManagerId === '__unassigned__'
+        ? 'Gerente não informado'
+        : commercialData().managers.find(manager => manager.id === commercialUi.treatmentManagerId)?.name || 'Todos os gerentes';
+      const nameFilter = String(commercialUi.treatmentName || '').trim() || 'Todas as tratativas';
+      const rowCount = table.querySelectorAll('tbody tr').length;
+      const density = rowCount <= 12 ? '' : rowCount <= 22 ? 'pdf-density-dense' : 'pdf-density-ultra';
+      const stage = document.createElement('div');
+      stage.className = `focused-pdf-export treatment-pdf-export ${density}`.trim();
+      stage.setAttribute('aria-hidden', 'true');
+      stage.innerHTML = `
+        <div class="focused-pdf-header">
+          <h1 class="focused-pdf-title">Tratativas</h1>
+          <div class="action-plan-print-meta">
+            <span><strong>Gerente:</strong> ${esc(selectedManager)}</span>
+            <span><strong>Nome da tratativa:</strong> ${esc(nameFilter)}</span>
+          </div>
+        </div>
+      `;
+      stage.appendChild(kpis);
+      const wrap = document.createElement('div');
+      wrap.className = 'table-wrap';
+      wrap.appendChild(table);
+      stage.appendChild(wrap);
+      document.body.appendChild(stage);
+      return stage;
+    }
+
     async function generateFocusedPdf({ buttonId, buildStage, filenamePrefix, successMessage }) {
       const button = document.getElementById(buttonId);
       const originalText = button?.textContent || 'Gerar PDF';
@@ -4947,13 +5005,53 @@
       return { history, current, previous, indicated, treated, previousTotal, variation, remaining, progress, status, dailyNeed, businessDays };
     }
 
+    function treatmentManagerName(item) {
+      return commercialData().managers.find(manager => manager.id === item.managerId)?.name || 'Gerente não informado';
+    }
+
+    function filteredTreatmentItems() {
+      const nameFilter = String(commercialUi.treatmentName || '').trim().toLocaleLowerCase('pt-BR');
+      const validManagerIds = new Set(commercialData().managers.map(manager => manager.id));
+      return (state.commercialTreatments || []).filter(item => {
+        const managerMatch = !commercialUi.treatmentManagerId
+          || (commercialUi.treatmentManagerId === '__unassigned__' ? !validManagerIds.has(item.managerId) : item.managerId === commercialUi.treatmentManagerId);
+        const nameMatch = !nameFilter || String(item.name || '').toLocaleLowerCase('pt-BR').includes(nameFilter);
+        return managerMatch && nameMatch;
+      });
+    }
+
+    function generateTreatmentPdf() {
+      return generateFocusedPdf({
+        buttonId: 'treatmentPdfBtn',
+        buildStage: buildTreatmentPdfStage,
+        filenamePrefix: 'tratativas',
+        successMessage: 'PDF de Tratativas gerado em uma única página.'
+      });
+    }
+
     function renderTreatments() {
       const body = document.getElementById('treatmentBody');
       const kpis = document.getElementById('treatmentKpis');
       if (!body || !kpis) return;
+      const managerFilter = document.getElementById('treatmentManagerFilter');
+      const managers = [...commercialData().managers].sort(byName);
+      const hasUnassigned = (state.commercialTreatments || []).some(item => !item.managerId || !managers.some(manager => manager.id === item.managerId));
+      const validManagerFilter = !commercialUi.treatmentManagerId
+        || commercialUi.treatmentManagerId === '__unassigned__' && hasUnassigned
+        || managers.some(manager => manager.id === commercialUi.treatmentManagerId);
+      if (!validManagerFilter) commercialUi.treatmentManagerId = '';
+      if (managerFilter) {
+        managerFilter.innerHTML = `<option value="">Todos os gerentes</option>${managers.map(manager => `<option value="${esc(manager.id)}">${esc(manager.name)}</option>`).join('')}${hasUnassigned ? '<option value="__unassigned__">Gerente não informado</option>' : ''}`;
+        managerFilter.value = commercialUi.treatmentManagerId;
+      }
+      const nameFilterInput = document.getElementById('treatmentNameFilter');
+      if (nameFilterInput && nameFilterInput.value !== commercialUi.treatmentName) nameFilterInput.value = commercialUi.treatmentName;
       const businessDays = treatmentBusinessDaysRemaining();
-      const items = (state.commercialTreatments || []).map(item => ({ item, metrics: treatmentMetrics(item, businessDays) }))
+      const filtered = filteredTreatmentItems();
+      const items = filtered.map(item => ({ item, metrics: treatmentMetrics(item, businessDays) }))
         .sort((a, b) => Number(a.metrics.status === 'Concluída') - Number(b.metrics.status === 'Concluída') || a.item.name.localeCompare(b.item.name, 'pt-BR'));
+      const filterSummary = document.getElementById('treatmentFilterSummary');
+      if (filterSummary) filterSummary.textContent = `${items.length} de ${(state.commercialTreatments || []).length} tratativa(s)`;
       const totals = items.reduce((sum, row) => ({
         indicated: sum.indicated + row.metrics.indicated,
         treated: sum.treated + row.metrics.treated,
@@ -4965,7 +5063,7 @@
         ['Total restante', fmt(totals.remaining, 0)], ['Dias úteis restantes', businessDays]
       ].map(([label, value]) => `<div class="treatment-kpi"><span>${label}</span><strong>${value}</strong></div>`).join('');
       if (!items.length) {
-        body.innerHTML = '<tr><td colspan="12" class="commercial-empty">Nenhuma tratativa cadastrada. Clique em “Nova tratativa” para começar.</td></tr>';
+        body.innerHTML = `<tr><td colspan="13" class="commercial-empty">${(state.commercialTreatments || []).length ? 'Nenhuma tratativa corresponde aos filtros selecionados.' : 'Nenhuma tratativa cadastrada. Clique em “Nova tratativa” para começar.'}</td></tr>`;
         return;
       }
       body.innerHTML = items.map(({ item, metrics }) => {
@@ -4973,7 +5071,7 @@
         const variationText = `${metrics.variation > 0 ? '+' : ''}${fmt(metrics.variation, 0)}`;
         const statusClass = metrics.status === 'Concluída' ? 'done' : metrics.status === 'Prazo encerrado' ? 'expired' : 'active';
         return `<tr data-treatment-id="${esc(item.id)}">
-          <td class="treatment-name">${esc(item.name)}</td><td class="num">${fmt(metrics.indicated, 0)}</td><td class="num">${fmt(metrics.treated, 0)}</td>
+          <td class="treatment-name">${esc(item.name)}</td><td>${esc(treatmentManagerName(item))}</td><td class="num">${fmt(metrics.indicated, 0)}</td><td class="num">${fmt(metrics.treated, 0)}</td>
           <td>${metrics.current.date ? fmtDate(metrics.current.date) : '—'}</td><td class="num">${metrics.previous ? fmt(metrics.previousTotal, 0) : '—'}</td>
           <td class="num treatment-variation ${variationClass}">${variationText}</td><td class="num">${fmt(metrics.remaining, 0)}</td><td class="num">${metrics.businessDays}</td>
           <td class="num">${metrics.dailyNeed === null ? '—' : `${fmt(metrics.dailyNeed, 0)}/dia`}</td>
@@ -4992,6 +5090,10 @@
       document.getElementById('treatmentModalTitle').textContent = item ? 'Atualizar tratativa' : 'Nova tratativa';
       document.getElementById('treatmentId').value = item?.id || '';
       document.getElementById('treatmentName').value = item?.name || '';
+      const managerSelect = document.getElementById('treatmentManager');
+      const managers = [...commercialData().managers].sort(byName);
+      managerSelect.innerHTML = `<option value="">Gerente não informado</option>${managers.map(manager => `<option value="${esc(manager.id)}">${esc(manager.name)}</option>`).join('')}`;
+      managerSelect.value = managers.some(manager => manager.id === item?.managerId) ? item.managerId : '';
       document.getElementById('treatmentIndicated').value = item ? metrics.indicated : '';
       document.getElementById('treatmentDate').value = today;
       document.getElementById('treatmentTotal').value = todayRecord ? todayRecord.total : (item ? metrics.treated : '');
@@ -5556,10 +5658,19 @@
     document.getElementById('scorePdfBtn').addEventListener('click', generateScorePdf);
     document.getElementById('commercialPriorityPdfBtn').addEventListener('click', generatePriorityPdf);
     document.getElementById('actionPlanPdfBtn').addEventListener('click', generateActionPlanPdf);
+    document.getElementById('treatmentPdfBtn').addEventListener('click', generateTreatmentPdf);
 
     const treatmentModal = document.getElementById('treatmentModal');
     const treatmentHistoryModal = document.getElementById('treatmentHistoryModal');
     document.getElementById('addTreatmentBtn').addEventListener('click', () => openTreatmentModal());
+    document.getElementById('treatmentManagerFilter').addEventListener('change', event => {
+      commercialUi.treatmentManagerId = event.target.value;
+      renderTreatments();
+    });
+    document.getElementById('treatmentNameFilter').addEventListener('input', event => {
+      commercialUi.treatmentName = event.target.value;
+      renderTreatments();
+    });
     document.getElementById('treatmentCloseBtn').addEventListener('click', closeTreatmentModal);
     document.getElementById('treatmentCancelBtn').addEventListener('click', closeTreatmentModal);
     document.getElementById('treatmentHistoryCloseBtn').addEventListener('click', closeTreatmentHistory);
@@ -5570,16 +5681,18 @@
       event.preventDefault();
       const id = document.getElementById('treatmentId').value;
       const name = document.getElementById('treatmentName').value.trim();
+      const managerId = document.getElementById('treatmentManager').value;
       const indicated = Number(document.getElementById('treatmentIndicated').value);
       const total = Number(document.getElementById('treatmentTotal').value);
       const date = document.getElementById('treatmentDate').value;
       if (!name || !date || !Number.isFinite(indicated) || indicated < 0 || !Number.isFinite(total) || total < 0) return alert('Preencha nome, quantidades não negativas e uma data válida.');
       let item = (state.commercialTreatments || []).find(entry => entry.id === id);
       if (!item) {
-        item = { id: makeId(), name, indicated, history: [] };
+        item = { id: makeId(), name, managerId, indicated, history: [] };
         state.commercialTreatments.push(item);
       }
       item.name = name;
+      item.managerId = managerId;
       item.indicated = indicated;
       const existing = item.history.find(record => record.date === date);
       if (existing) existing.total = total;
