@@ -949,8 +949,12 @@
     .treatment-history-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; padding:10px 12px; border:1px solid var(--line); border-radius:9px; }
     .treatment-history-row span { color:var(--muted); font-size:11px; }
     .treatment-history-row strong { display:block; margin-top:2px; }
-    .treatment-pdf-export .treatment-table { min-width:0; width:100%; table-layout:fixed; font-size:11px; }
-    .treatment-pdf-export .treatment-table th, .treatment-pdf-export .treatment-table td { padding:7px 6px; overflow-wrap:anywhere; }
+    .treatment-pdf-export .treatment-table { min-width:0; width:100%; table-layout:fixed; font-size:10px; }
+    .treatment-pdf-export .treatment-table th, .treatment-pdf-export .treatment-table td { min-width:0; padding:7px 5px; overflow:hidden; overflow-wrap:anywhere; }
+    .treatment-pdf-export .treatment-progress { min-width:0; width:100%; max-width:100%; overflow:hidden; }
+    .treatment-pdf-export .treatment-progress-track { width:100%; max-width:100%; }
+    .treatment-pdf-export .treatment-progress-label { font-size:9px; }
+    .treatment-pdf-export .treatment-status { max-width:100%; padding:4px 6px; font-size:9px; }
     .treatment-pdf-export .treatment-kpis { margin-bottom:10px; }
     .treatment-pdf-export .treatment-kpi { padding:8px 10px; }
     .treatment-pdf-export .treatment-kpi strong { font-size:17px; }
@@ -4544,6 +4548,15 @@
       if (!sourceTable || !sourceKpis) throw new Error('Tabela de Tratativas não localizada.');
       const table = cloneForFocusedPdf(sourceTable);
       table.classList.remove('mobile-card-table');
+      table.querySelector('colgroup')?.remove();
+      const columnWidths = [11, 10, 7, 8, 8, 8, 8, 8, 7, 9, 9, 7];
+      const colgroup = document.createElement('colgroup');
+      columnWidths.forEach(width => {
+        const col = document.createElement('col');
+        col.style.width = `${width}%`;
+        colgroup.appendChild(col);
+      });
+      table.prepend(colgroup);
       const kpis = cloneForFocusedPdf(sourceKpis);
       const selectedManager = commercialUi.treatmentManagerId === '__unassigned__'
         ? 'Gerente não informado'
