@@ -229,6 +229,50 @@
       .card-body { padding: 12px; }
     }
 
+    /* Área do Gestor */
+    .manager-hero { background: linear-gradient(135deg,#6f101e,#b51f2e); color:#fff; padding:24px; border-radius:12px; margin-bottom:16px; }
+    .manager-hero-row,.manager-toolbar,.manager-card-head,.manager-card-actions { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    .manager-hero h2 { margin:0 0 6px; font-size:clamp(23px,3vw,34px); }
+    .manager-hero p { margin:0; opacity:.9; }
+    .manager-progress { min-width:min(100%,320px); }
+    .manager-progress-label { display:flex; justify-content:space-between; font-size:13px; font-weight:800; margin-bottom:7px; }
+    .manager-progress-track { height:12px; border-radius:99px; background:rgba(255,255,255,.25); overflow:hidden; }
+    .manager-progress-bar { height:100%; width:0; background:#fff; border-radius:inherit; transition:width .25s ease; }
+    .manager-toolbar { background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:16px; position:sticky; top:53px; z-index:12; box-shadow:var(--shadow); }
+    .manager-filters { display:flex; gap:7px; }
+    .manager-filter { border:1px solid var(--line); background:#fff; color:var(--muted); border-radius:999px; padding:9px 15px; font-weight:800; }
+    .manager-filter.active { background:var(--brand); border-color:var(--brand); color:#fff; }
+    .manager-date { display:flex; align-items:center; gap:8px; font-size:12px; font-weight:800; color:var(--muted); }
+    .manager-date input { background:#fff; padding:8px; }
+    .manager-summary-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:16px; }
+    .manager-summary { background:#fff; border:1px solid var(--line); border-radius:10px; padding:13px; }
+    .manager-summary span { display:block; color:var(--muted); font-size:11px; font-weight:800; text-transform:uppercase; }
+    .manager-summary strong { display:block; font-size:25px; margin-top:5px; }
+    .manager-period-head { margin:24px 0 12px; }
+    .manager-period-head h3 { margin:0 0 4px; }
+    .manager-period-head p { margin:0; color:var(--muted); font-size:13px; }
+    .manager-task-list { display:grid; gap:12px; }
+    .manager-task { background:#fff; border:1px solid var(--line); border-left:5px solid var(--brand); border-radius:11px; padding:15px; box-shadow:0 3px 12px rgba(25,31,40,.05); }
+    .manager-task.done { border-left-color:var(--green); opacity:.82; }
+    .manager-task.in-progress { border-left-color:var(--yellow); }
+    .manager-task.overdue:not(.done) { box-shadow:0 0 0 2px rgba(222,60,53,.16); }
+    .manager-task-title { display:flex; gap:11px; align-items:flex-start; min-width:0; }
+    .manager-task-title input { width:20px; height:20px; accent-color:var(--green); flex:none; margin-top:2px; }
+    .manager-task-title h4 { margin:0 0 5px; font-size:16px; }
+    .manager-meta { display:flex; flex-wrap:wrap; gap:6px; }
+    .manager-badge { display:inline-flex; padding:4px 7px; border-radius:99px; background:#f0f2f4; color:#515964; font-size:11px; font-weight:800; }
+    .manager-badge.time { background:#f9e8eb; color:var(--brand-dark); }
+    .manager-instruction { margin:12px 0 0; color:#444b54; line-height:1.45; }
+    .manager-task-actions { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+    .manager-task-details { display:grid; grid-template-columns:1fr 1fr; gap:11px; margin-top:13px; padding-top:13px; border-top:1px dashed var(--line); }
+    .manager-task-details[hidden] { display:none; }
+    .manager-task-details .field { min-width:0; }
+    .manager-task-details .full { grid-column:1/-1; }
+    .manager-task-details textarea { min-height:76px; resize:vertical; background:#fffdf3; }
+    .manager-task-details select,.manager-task-details input { background:#fffdf3; }
+    @media(max-width:800px){ .manager-summary-grid{grid-template-columns:1fr 1fr}.manager-task-details{grid-template-columns:1fr}.manager-task-details .full{grid-column:auto}.manager-toolbar{top:50px}.manager-filter{padding:9px 11px}.manager-hero{padding:18px} }
+    @media(max-width:460px){ .manager-date{width:100%}.manager-date input{flex:1}.manager-filters{width:100%;overflow:auto}.manager-filter{flex:1}.manager-card-actions{width:100%} }
+
 
     .sync-status {
       display: inline-flex;
@@ -2346,6 +2390,7 @@
   <nav class="tabs-wrap no-print">
     <div class="tabs">
       <button class="tab-btn active" data-tab="commercialPanel">Gestão Comercial</button>
+      <button class="tab-btn" data-tab="managerPanel">Área do Gestor</button>
     </div>
   </nav>
 
@@ -2635,6 +2680,12 @@
       </div>
     </section>
 
+    <section id="managerPanel" class="tab-panel">
+      <div class="manager-hero"><div class="manager-hero-row"><div><h2>Área do Gestor</h2><p>Método de gestão transformado em rotina de execução, acompanhamento e registro.</p></div><div class="manager-progress"><div class="manager-progress-label"><span id="managerProgressTitle">Progresso</span><strong id="managerProgressText">0%</strong></div><div class="manager-progress-track"><div class="manager-progress-bar" id="managerProgressBar"></div></div></div></div></div>
+      <div class="manager-toolbar no-print"><div class="manager-filters" role="tablist" aria-label="Periodicidade"><button class="manager-filter active" data-manager-period="daily">Diário</button><button class="manager-filter" data-manager-period="weekly">Semanal</button><button class="manager-filter" data-manager-period="monthly">Mensal</button></div><label class="manager-date">Data de acompanhamento <input id="managerDate" type="date"></label></div>
+      <div class="manager-summary-grid" id="managerSummary"></div><div id="managerTaskArea"></div>
+    </section>
+
     <section id="launchPanel" class="tab-panel" hidden aria-hidden="true">
       <div class="card">
         <div class="card-head">
@@ -2825,6 +2876,7 @@
       actionPlanProductId: '',
       actionPlans: [],
       commercialFilterPresets: [],
+      managerArea: { records: {} },
       analysisDate: '2026-08-07',
       commercial: defaultCommercial(),
       scores: [
@@ -2870,6 +2922,7 @@
       filters: { products: new Set(), segments: new Set(), managers: new Set() },
       selectedManagerId: ''
     };
+    const managerUi = { period: 'daily', date: new Date().toISOString().slice(0,10), expanded: new Set() };
 
     function setSyncStatus(message, type = '') {
       const el = document.getElementById('syncStatus');
@@ -2994,8 +3047,24 @@
         actionPlanProductId: String(base.actionPlanProductId || firstAction.productId || ''),
         actionPlans,
         commercialFilterPresets,
+        managerArea: normalizeManagerArea(base.managerArea),
         commercialReferences: normalizeCommercialReferences(base.commercialReferences, base.references, commercial)
       };
+    }
+
+    function normalizeManagerArea(value) {
+      const records = value && typeof value.records === 'object' && value.records ? value.records : {};
+      const safe = {};
+      Object.entries(records).forEach(([key, record]) => {
+        if (!record || typeof record !== 'object') return;
+        safe[String(key)] = {
+          status: ['pending','in-progress','done'].includes(record.status) ? record.status : 'pending',
+          priority: ['high','normal','low'].includes(record.priority) ? record.priority : 'normal',
+          notes: String(record.notes || '').slice(0,4000), pending: String(record.pending || '').slice(0,2000),
+          evidence: String(record.evidence || '').slice(0,1000), completedAt: String(record.completedAt || '')
+        };
+      });
+      return { records: safe };
     }
 
     function userStorageKey(uid) {
@@ -3278,6 +3347,7 @@
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === id));
       if (id === 'reportPanel') renderReport();
       if (id === 'commercialPanel') renderCommercialAll();
+      if (id === 'managerPanel') renderManagerArea();
     }
 
     function syncScoresWithCommercialManagers() {
@@ -4801,6 +4871,7 @@
       input.value = '';
       saveState();
       renderCommercialAll();
+      renderManagerArea();
     }
 
     function addCommercialSegment() {
@@ -4902,6 +4973,79 @@
     }
 
     document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+
+    const MANAGER_TASKS = [
+      {id:'daily-risk',period:'daily',time:'08:00-09:30',pillar:'Gestão de Crédito',title:'Devedora, Link de Vencidos e PDD',text:'Acompanhar valores que podem ser provisionados até o fim do mês e orientar a regularização das pendências.'},
+      {id:'daily-pac',period:'daily',time:'08:00-09:30',pillar:'Gestão de Crédito',title:'Gerir apontamentos do PAC',text:'Analisar atipicidades das propostas aprovadas no dia anterior, corrigir desconformidades e mitigar riscos.'},
+      {id:'daily-pobj',period:'daily',time:'08:00-09:30',pillar:'Gestão Comercial',title:'POBJ Produção e BSC',text:'Avaliar diariamente gaps, atingimentos e projeções para antecipar desvios e construir resultado regular ao longo do mês.'},
+      {id:'daily-ccre',period:'daily',time:'08:00-09:30',pillar:'Gestão Comercial',title:'Avaliar oportunidades via CCRE',text:'Revisar operações realizadas por canais para elevar a experiência, ampliar negócios e mitigar riscos.'},
+      {id:'daily-prime-pj',period:'daily',time:'08:00-09:30',pillar:'Gestão Comercial',title:'Direcionamento da atividade comercial Prime e PJ',text:'Direcionar o time para oportunidades com maior potencial de conversão e impacto no resultado.'},
+      {id:'daily-committee',period:'daily',time:'08:00-09:30',pillar:'Gestão de Crédito',title:'Conduzir comitê de crédito e negócios',text:'Promover decisões consistentes, técnicas e alinhadas ao perfil de risco, fortalecendo o aprendizado coletivo.'},
+      {id:'daily-activity',period:'daily',time:'10:00-16:00',pillar:'Atividade Comercial',title:'Monitorar atividade comercial',text:'Acompanhar a execução do plano comercial ao longo do dia, corrigindo ritmo, foco e distribuição de oportunidades.'},
+      {id:'daily-approaches',period:'daily',time:'10:00-16:00',pillar:'Atividade Comercial',title:'Acompanhar abordagens comerciais',text:'Acompanhar interações e elevar a qualidade das conversas consultivas, assertivas e orientadas à necessidade do cliente.'},
+      {id:'daily-visits',period:'daily',time:'10:00-16:00',pillar:'Atividade Comercial',title:'Acompanhar agenda de visitas',text:'Garantir agenda alinhada às prioridades, com preparação, uso eficiente do tempo e foco em oportunidades.'},
+      {id:'daily-closing',period:'daily',time:'16:00-17:30',pillar:'Gestão Comercial',title:'Fechamento da Atividade Comercial',text:'Comparar esforço e resultado, reconhecer êxitos, identificar fragilidades e corrigir desvios ainda no dia.'},
+      {id:'daily-next',period:'daily',time:'16:00-17:30',pillar:'Gestão Comercial',title:'Planejamento do Próximo Dia',text:'Preparar prioridades, clientes, produtos e agendas para aumentar produtividade e previsibilidade no dia seguinte.'},
+      {id:'weekly-mon-cascade',period:'weekly',day:1,time:'Segunda',pillar:'Gestão Comercial',title:'Cascateamento DR/GR',text:'Traduzir objetivos e estratégias da DR/GR em orientações práticas, objetivas e executáveis para PF e PJ.'},
+      {id:'weekly-mon-round',period:'weekly',day:1,time:'Segunda',pillar:'Gestão Comercial',title:'Rodada da Produtividade - direcionamento',text:'Definir foco, indicadores, combinados e resultado esperado para a semana.'},
+      {id:'weekly-tue-knowledge',period:'weekly',day:2,time:'Terça',pillar:'Gestão de Pessoas',title:'Circuito do Saber',text:'Conduzir aprendizado aplicado às necessidades da equipe e reconhecer boas práticas e entregas.'},
+      {id:'weekly-wed-portfolio',period:'weekly',day:3,time:'Quarta',pillar:'Atividade Comercial',title:'Acompanhamento Individual da Carteira',text:'Identificar antecipadamente gaps de performance e direcionar ações corretivas por gerente e carteira.'},
+      {id:'weekly-thu-base',period:'weekly',day:4,time:'Quinta',pillar:'Atividade Comercial',title:'Gestão da Base de Clientes',text:'Avaliar entradas, saídas, potencial, rentabilidade e riscos para fazer a carteira evoluir com qualidade.'},
+      {id:'weekly-fri-round',period:'weekly',day:5,time:'Sexta',pillar:'Gestão Comercial',title:'Rodada da Produtividade - apuração',text:'Apurar resultados, comparar com os combinados, reconhecer destaques e registrar ajustes para a próxima rodada.'},
+      {id:'monthly-balance',period:'monthly',time:'Dias 20-25 · 08:00-09:30',pillar:'Gestão Comercial',title:'Balanço da Unidade',text:'Realizar o balanço da unidade entre os dias 20 e 25: Orçamento, POBJ Produção, Supera, resultados, aprendizados, reconhecimento e prioridades do próximo ciclo.'}
+    ];
+    const MANAGER_GUIDES = {
+      'daily-risk':['Priorizar cobranças em MORA, depois CA e LP.','Verificar indicações e tratativas no Link de Vencidos, começando pelos maiores valores.','Usar a PDD para avaliar garantias insuficientes, comportamento das safras, clientes e operações.','Observar indícios no Preventivo e, quando pertinente, acionar escritórios jurídicos em contratos expressivos ou parados.'],
+      'daily-pac':['Checar e-mail, WhatsApp e App Link pela manhã.','Analisar causa raiz e decidir o sequenciamento de cada operação.','Orientar correções imediatas e usar reincidências como aprendizado.','Verificar renda/faturamento, tempo de empresa/conta, idade, MEI endividado, excesso de consultas e ausência de comitê.'],
+      'daily-pobj':['Avaliar o POBJ Produção linha a linha nos painéis do portal.','Comparar objetivo e realizado por gerente e pelo potencial de cada carteira.','Projetar o mês pelo ritmo observado e pela realidade da agência.','Ajustar prioridades, direcionamentos e intensidade de atuação.'],
+      'daily-ccre':['Se não for possível avaliar tudo, priorizar contratos de maior valor.','Buscar escala, inclusive avaliando aumento do contrato e dívidas em outros bancos.','Oferecer consultoria aderente ao cenário, objetivos e capacidade de pagamento.','Explorar cross-sell: Open Finance, cartão, seguros e outras oportunidades.','Caminho: IMS12 > CCRE.'],
+      'daily-prime-pj':['Definir listas/clientes e quantidade mínima diária, evitando abordagens genéricas e repetidas.','Priorizar Circuito do Saber, cascateamento DR/GR, SMART e Ações Prioritárias PJ.','Orientar visão 360 no CRM e captura de oportunidades dentro do diálogo.','Bloquear agenda quando necessário. Para conquista, priorizar indicações, listas e pré-aprovados.'],
+      'daily-committee':['Preparar pauta, casos, cadastro/dossiê e informações antes da reunião.','Exigir apresentação 360º: contexto, coerência, cash/TPV/folha/recebíveis PJ ou previdência/cartão/salário PF.','Avaliar estrutura, capacidade de pagamento, riscos, mitigadores, garantias e política.','Consolidar pontos positivos, ajustes, boas práticas e alertas; analisar tudo antes da validação.'],
+      'daily-activity':['No SMART > Gestão de Contatos, comparar ofertas solicitadas e realizadas e alertas demandados e trabalhados.','Verificar qualidade das descrições, coerência das oportunidades e formação de pipeline.','Comparar volume e qualidade com equipe, carteira e meta.','Corrigir baixa atividade, falta de disciplina, insuficiência de pipeline e baixa qualificação.'],
+      'daily-approaches':['Acompanhar visitas, ligações ou contatos remotos, priorizando quem tem dificuldade de resultado.','Observar abordagem completa, clareza, conexão entre necessidade e oferta e tratamento de objeções.','Orientar desvios imediatamente e disseminar boas práticas.','Usar situações reais no Conversa Boa e Circuito do Saber.'],
+      'daily-visits':['Acompanhar a agenda semanal; realizar ao menos uma visita diária junto ao gerente da agência.','Priorizar Gerentes PJ e, estrategicamente, Prime.','Validar visão 360, objetivos da semana, clientes estratégicos, investidores e maiores riscos.','Confirmar preparo prévio e cobrar retorno, aprendizado e avanço; usar corretores, BBF e PGP quando possível.'],
+      'daily-closing':['Analisar produção, contatos, visitas, ofertas, êxitos, dificuldades, desempenho e gaps.','Dar feedback no mesmo dia, especialmente em baixa performance recorrente.','Reforçar pontos positivos, qualidade das ofertas e ajustes práticos de abordagem, foco ou organização.','Usar o F-LOG como fonte da leitura esforço x resultado.'],
+      'daily-next':['Revisar no F-LOG pendências, oportunidades e ações a retomar.','Orientar prioridades, clientes a contatar/visitar e produtos com maior necessidade de foco.','Validar agendas comerciais, priorizadas e coerentes com a semana.','Encerrar com clareza: o que cada pessoa fará, por onde começará e qual entrega é esperada.'],
+      'weekly-mon-cascade':['Revisar prioridades, gaps, oportunidades e o papel de cada produto.','Reunir 100% da equipe de forma conjunta e presencial; incluir PAs/PABs remotamente quando aplicável.','Traduzir diretrizes em ações objetivas por PF/PJ, com expectativa mínima e listas prioritárias.'],
+      'weekly-mon-round':['Conectar cascateamento, situação dos indicadores e produção necessária por Prime e PJ.','Definir linhas, carteiras e frentes prioritárias.','Indicar os indicadores de maior peso e resultados críticos para Orçamento e redução de gaps.'],
+      'weekly-tue-knowledge':['Preparar a aula com ao menos um dia de antecedência.','Realizar uma das 4 aulas mensais, com 30 minutos antes do expediente.','Preparar ambiente em semicírculo/U e aviso de treinamento.','Abrir com propósito, desenvolver com exemplos e encerrar com resumo, feedback, desafio, quiz e registro.'],
+      'weekly-wed-portfolio':['Analisar desempenho antes da conversa: RO/ROB, POBJ/PADE, Supera e evolução da base.','Dar atenção especial a carteiras abaixo de 60% e gerentes de baixa performance.','Avaliar crescimento, inativação, conquista, crédito, vencidos, PDD e maiores riscos.','Explicar causas dos gaps e apoiar a criação e efetivação do pipeline.'],
+      'weekly-thu-base':['Avaliar entradas, origem, saídas, inativações, perdas e potencial pouco explorado.','Verificar crescimento saudável, relacionamento, rentabilidade, fidelização e retorno do esforço.','Identificar concentração 80/20 e priorizar clientes estratégicos, investidores e maiores riscos.','Direcionar esforços com disciplina para crescimento sustentável e progressivo.'],
+      'weekly-fri-round':['Apurar individualmente com Prime e PJ o planejado versus realizado e a evolução dos indicadores.','Separar o que foi atingido do que não foi entregue.','Identificar dispersões e registrar correções para a semana seguinte.','As correções de rota devem ocorrer diariamente para permitir a colheita na sexta.'],
+      'monthly-balance':['Reunir todo o quadro da agência entre os dias 20 e 25, das 8h às 9h30.','Apresentar o balanço do mês anterior de Orçamento, POBJ Produção/BSC e Supera.','Alinhar e direcionar o time a partir dos números.','Reconhecer boas práticas e parabenizar as entregas do mês.']
+    };
+
+    function managerRecordKey(task) { return `${managerUi.date}:${task.id}`; }
+    function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])); }
+    function managerRecord(task) { return state.managerArea.records[managerRecordKey(task)] || {status:'pending',priority:'normal',notes:'',pending:'',evidence:'',completedAt:''}; }
+    function managerTasksForView() { return MANAGER_TASKS.filter(task => task.period === managerUi.period); }
+    function managerIsOverdue(task, record) {
+      if (record.status === 'done' || task.period !== 'daily' || !task.time.includes('-')) return false;
+      const today = new Date().toISOString().slice(0,10); if (managerUi.date !== today) return managerUi.date < today;
+      const [h,m] = task.time.split('-')[1].split(':').map(Number), now = new Date(); return now.getHours()*60+now.getMinutes() > h*60+m;
+    }
+    function renderManagerArea() {
+      const dateInput = document.getElementById('managerDate'); if (!dateInput) return; dateInput.value = managerUi.date;
+      document.querySelectorAll('[data-manager-period]').forEach(btn => btn.classList.toggle('active',btn.dataset.managerPeriod===managerUi.period));
+      const tasks=managerTasksForView(), records=tasks.map(managerRecord), done=records.filter(r=>r.status==='done').length;
+      const progress=tasks.length?Math.round(done/tasks.length*100):0, pending=records.filter(r=>r.status==='pending').length, active=records.filter(r=>r.status==='in-progress').length, overdue=tasks.filter((t,i)=>managerIsOverdue(t,records[i])).length;
+      document.getElementById('managerProgressText').textContent=`${progress}%`; document.getElementById('managerProgressBar').style.width=`${progress}%`;
+      document.getElementById('managerProgressTitle').textContent=({daily:'Progresso do dia',weekly:'Progresso semanal',monthly:'Progresso mensal'})[managerUi.period];
+      document.getElementById('managerSummary').innerHTML=`<div class="manager-summary"><span>Concluídas</span><strong>${done}/${tasks.length}</strong></div><div class="manager-summary"><span>Em andamento</span><strong>${active}</strong></div><div class="manager-summary"><span>Pendentes</span><strong>${pending}</strong></div><div class="manager-summary"><span>Vencidas</span><strong>${overdue}</strong></div>`;
+      const day=new Date(`${managerUi.date}T12:00:00`).getDay(), dateNum=Number(managerUi.date.slice(-2));
+      const context=managerUi.period==='weekly'?`Hoje: ${['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'][day]}. A rotina completa da semana permanece visível.`:managerUi.period==='monthly'?(dateNum>=20&&dateNum<=25?'Janela do Balanço da Unidade ativa para esta data.':'O Balanço da Unidade deve ocorrer entre os dias 20 e 25, das 8h às 9h30.'):'Execute por faixa de horário e registre pendências enquanto ainda são acionáveis.';
+      document.getElementById('managerTaskArea').innerHTML=`<div class="manager-period-head"><h3>${({daily:'Rotina diária',weekly:'Rotina semanal',monthly:'Rotina mensal'})[managerUi.period]}</h3><p>${context}</p></div><div class="manager-task-list">${tasks.map(managerTaskHtml).join('')}</div>`;
+    }
+    function managerTaskHtml(task) {
+      const r=managerRecord(task), key=managerRecordKey(task), expanded=managerUi.expanded.has(key), overdue=managerIsOverdue(task,r), guide=MANAGER_GUIDES[task.id]||[];
+      return `<article class="manager-task ${r.status} ${overdue?'overdue':''}" data-manager-task="${task.id}"><div class="manager-card-head"><div class="manager-task-title"><input type="checkbox" data-manager-check ${r.status==='done'?'checked':''} aria-label="Concluir ${task.title}"><div><h4>${task.title}</h4><div class="manager-meta"><span class="manager-badge time">${task.time}</span><span class="manager-badge">${task.pillar}</span>${overdue?'<span class="manager-badge" style="background:#fde8e5;color:#952a21">Vencida</span>':''}${r.priority==='high'?'<span class="manager-badge" style="background:#fff0cc;color:#805600">Alta prioridade</span>':''}</div></div></div><div class="manager-card-actions"><select data-manager-status aria-label="Status"><option value="pending" ${r.status==='pending'?'selected':''}>Pendente</option><option value="in-progress" ${r.status==='in-progress'?'selected':''}>Em andamento</option><option value="done" ${r.status==='done'?'selected':''}>Concluído</option></select></div></div><p class="manager-instruction">${task.text}</p><div class="manager-task-actions"><button class="btn small dark" type="button" data-manager-expand>${expanded?'Ocultar condução e registro':'Ver condução e registrar'}</button></div><div class="manager-task-details" ${expanded?'':'hidden'}><div class="full"><strong>Condução do manual</strong><ul>${guide.map(item=>`<li>${item}</li>`).join('')}</ul></div><div class="field"><label>Prioridade</label><select data-manager-field="priority"><option value="high" ${r.priority==='high'?'selected':''}>Alta</option><option value="normal" ${r.priority==='normal'?'selected':''}>Normal</option><option value="low" ${r.priority==='low'?'selected':''}>Baixa</option></select></div><div class="field"><label>Evidência / referência</label><input type="text" data-manager-field="evidence" value="${escapeHtml(r.evidence)}" placeholder="Ex.: link, protocolo ou nome do arquivo"></div><div class="field full"><label>Observações da execução</label><textarea data-manager-field="notes" placeholder="Decisões, aprendizados e resultado obtido">${escapeHtml(r.notes)}</textarea></div><div class="field full"><label>Pendências e próximo passo</label><textarea data-manager-field="pending" placeholder="Responsável, ação e prazo">${escapeHtml(r.pending)}</textarea></div></div></article>`;
+    }
+    function updateManagerRecord(taskId,field,value){const task=MANAGER_TASKS.find(t=>t.id===taskId);if(!task)return;const key=managerRecordKey(task);state.managerArea.records[key]={...managerRecord(task),[field]:value};if(field==='status')state.managerArea.records[key].completedAt=value==='done'?new Date().toISOString():'';saveState();renderManagerArea();}
+    document.querySelectorAll('[data-manager-period]').forEach(btn=>btn.addEventListener('click',()=>{managerUi.period=btn.dataset.managerPeriod;renderManagerArea();}));
+    document.getElementById('managerDate').addEventListener('change',e=>{managerUi.date=e.target.value||new Date().toISOString().slice(0,10);managerUi.expanded.clear();renderManagerArea();});
+    document.getElementById('managerTaskArea').addEventListener('click',e=>{const card=e.target.closest('[data-manager-task]');if(!card)return;const task=MANAGER_TASKS.find(t=>t.id===card.dataset.managerTask);if(e.target.closest('[data-manager-expand]')){const key=managerRecordKey(task);managerUi.expanded.has(key)?managerUi.expanded.delete(key):managerUi.expanded.add(key);renderManagerArea();}if(e.target.matches('[data-manager-check]'))updateManagerRecord(task.id,'status',e.target.checked?'done':'pending');});
+    document.getElementById('managerTaskArea').addEventListener('change',e=>{const card=e.target.closest('[data-manager-task]');if(!card)return;if(e.target.matches('[data-manager-status]'))updateManagerRecord(card.dataset.managerTask,'status',e.target.value);if(e.target.matches('[data-manager-field]'))updateManagerRecord(card.dataset.managerTask,e.target.dataset.managerField,e.target.value);});
+    document.getElementById('managerTaskArea').addEventListener('input',e=>{if(!e.target.matches('textarea[data-manager-field],input[data-manager-field]'))return;const card=e.target.closest('[data-manager-task]'),task=MANAGER_TASKS.find(t=>t.id===card.dataset.managerTask),key=managerRecordKey(task);state.managerArea.records[key]={...managerRecord(task),[e.target.dataset.managerField]:e.target.value};saveState();});
 
     document.getElementById('groupTitle').addEventListener('input', e => {
       state.groupTitle = e.target.value; saveState();
