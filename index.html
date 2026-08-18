@@ -2557,6 +2557,7 @@
                     <th>Objetivo</th>
                     <th>Realizado</th>
                     <th>Déficit</th>
+                    <th>Meta do dia</th>
                     <th>%</th>
                   </tr>
                 </thead>
@@ -4248,7 +4249,7 @@
       const oldColgroup = table.querySelector('colgroup');
       oldColgroup?.remove();
 
-      const columnWidths = [4.5, 20, 10.5, 16.5, 13.5, 13.5, 14.5, 7];
+      const columnWidths = [4.5, 18, 9.5, 15, 11.5, 11.5, 12, 11, 7];
       const colgroup = document.createElement('colgroup');
       columnWidths.forEach(width => {
         const col = document.createElement('col');
@@ -4766,10 +4767,17 @@
       }
     }
 
+    function commercialDailyTarget(objective, realized, businessDays = treatmentBusinessDaysRemaining()) {
+      const gap = Math.max(toNumber(objective) - toNumber(realized), 0);
+      if (gap === 0) return 0;
+      return businessDays > 0 ? gap / businessDays : null;
+    }
+
     function renderCommercialDashboard() {
       const groups = currentCommercialGroups();
       const body = document.getElementById('commercialSummaryBody');
       if (!body) return;
+      const businessDays = treatmentBusinessDaysRemaining();
       const managerCount = new Set(groups.flatMap(group => group.managerIds || [])).size;
       const activeFilterCount = Object.values(commercialUi.filters).reduce((sum, set) => sum + set.size, 0);
       const singleManagerMode = commercialUi.filters.managers.size === 1;
@@ -4777,7 +4785,7 @@
         `${groups.length} resultado(s) · ${managerCount} gerente(s)${singleManagerMode ? ' · visão individual' : ''}${activeFilterCount ? ` · ${activeFilterCount} filtro(s) selecionado(s)` : ''}`;
 
       if (!groups.length) {
-        body.innerHTML = '<tr><td colspan="9" class="commercial-empty">Nenhum lançamento corresponde aos filtros. Digite Objetivo ou Realizado no F-LOG.</td></tr>';
+        body.innerHTML = '<tr><td colspan="10" class="commercial-empty">Nenhum lançamento corresponde aos filtros. Digite Objetivo ou Realizado no F-LOG.</td></tr>';
         return;
       }
 
@@ -4786,6 +4794,7 @@
         const expandable = group.mode !== 'single' && group.details.length > 0;
         const expanded = expandable && commercialUi.expanded.has(group.key);
         const pctText = group.pct === null ? '—' : fmtPct(group.pct, 0);
+        const dailyTarget = commercialDailyTarget(group.objective, group.realized, businessDays);
         const deltaClass = group.delta < 0 ? 'negative' : group.delta > 0 ? 'positive' : 'zero';
         const rowClass = group.mode === 'single' ? 'single-manager-row' : 'group-row';
         const keyAttrs = expandable ? `data-group-key="${esc(group.key)}" aria-expanded="${expanded}"` : '';
@@ -4802,11 +4811,13 @@
             <td class="num">${fmtCommercial(group.objective)}</td>
             <td class="num">${fmtCommercial(group.realized)}</td>
             <td class="num ${deltaClass}">${fmtCommercialDelta(group.delta)}</td>
+            <td class="num">${dailyTarget === null ? '—' : fmtCommercial(dailyTarget)}</td>
             <td class="num pct-cell">${pctText}</td>
           </tr>`);
         if (expanded) {
           group.details.forEach((detail, detailIndex) => {
             const detailPct = detail.pct === null ? '—' : fmtPct(detail.pct, 0);
+            const detailDailyTarget = commercialDailyTarget(detail.objective, detail.realized, businessDays);
             const detailDeltaClass = detail.delta < 0 ? 'negative' : detail.delta > 0 ? 'positive' : 'zero';
             rows.push(`
               <tr class="detail-row">
@@ -4818,6 +4829,7 @@
                 <td class="num">${fmtCommercial(detail.objective)}</td>
                 <td class="num">${fmtCommercial(detail.realized)}</td>
                 <td class="num ${detailDeltaClass}">${fmtCommercialDelta(detail.delta)}</td>
+                <td class="num">${detailDailyTarget === null ? '—' : fmtCommercial(detailDailyTarget)}</td>
                 <td class="num pct-cell">${detailPct}</td>
               </tr>`);
           });
