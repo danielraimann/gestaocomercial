@@ -3135,7 +3135,7 @@
             </div>
             <div class="treatment-filters no-print">
               <div class="field"><label for="treatmentManagerFilter">Gerente</label><select id="treatmentManagerFilter"></select></div>
-              <div class="field"><label for="treatmentNameFilter">Nome da tratativa</label><input id="treatmentNameFilter" type="search" placeholder="Digite para filtrar" autocomplete="off" /></div>
+              <div class="field"><label for="treatmentNameFilter">Tratativa</label><select id="treatmentNameFilter"><option value="">Todas as tratativas</option></select></div>
               <div class="treatment-filter-summary" id="treatmentFilterSummary"></div>
             </div>
             <div class="treatment-kpis" id="treatmentKpis"></div>
@@ -5038,7 +5038,7 @@
           <h1 class="focused-pdf-title">Tratativas</h1>
           <div class="action-plan-print-meta">
             <span><strong>Gerente:</strong> ${esc(selectedManager)}</span>
-            <span><strong>Nome da tratativa:</strong> ${esc(nameFilter)}</span>
+            <span><strong>Tratativa:</strong> ${esc(nameFilter)}</span>
           </div>
         </div>
       `;
@@ -5505,7 +5505,7 @@
       return (state.commercialTreatments || []).filter(item => {
         const managerMatch = !commercialUi.treatmentManagerId
           || (commercialUi.treatmentManagerId === '__unassigned__' ? !validManagerIds.has(item.managerId) : item.managerId === commercialUi.treatmentManagerId);
-        const nameMatch = !nameFilter || String(item.name || '').toLocaleLowerCase('pt-BR').includes(nameFilter);
+        const nameMatch = !nameFilter || String(item.name || '').trim().toLocaleLowerCase('pt-BR') === nameFilter;
         return managerMatch && nameMatch;
       });
     }
@@ -5535,7 +5535,19 @@
         managerFilter.value = commercialUi.treatmentManagerId;
       }
       const nameFilterInput = document.getElementById('treatmentNameFilter');
-      if (nameFilterInput && nameFilterInput.value !== commercialUi.treatmentName) nameFilterInput.value = commercialUi.treatmentName;
+      const treatmentNames = [...new Map((state.commercialTreatments || [])
+        .map(item => String(item.name || '').trim())
+        .filter(Boolean)
+        .map(name => [name.toLocaleLowerCase('pt-BR'), name])).values()]
+        .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+      const selectedTreatmentName = treatmentNames.find(name =>
+        name.toLocaleLowerCase('pt-BR') === String(commercialUi.treatmentName || '').trim().toLocaleLowerCase('pt-BR')
+      ) || '';
+      if (commercialUi.treatmentName !== selectedTreatmentName) commercialUi.treatmentName = selectedTreatmentName;
+      if (nameFilterInput) {
+        nameFilterInput.innerHTML = `<option value="">Todas as tratativas</option>${treatmentNames.map(name => `<option value="${esc(name)}">${esc(name)}</option>`).join('')}`;
+        nameFilterInput.value = commercialUi.treatmentName;
+      }
       const businessDays = treatmentBusinessDaysRemaining();
       const filtered = filteredTreatmentItems();
       const items = filtered.map(item => ({ item, metrics: treatmentMetrics(item, businessDays) }))
@@ -6157,7 +6169,7 @@
       commercialUi.treatmentManagerId = event.target.value;
       renderTreatments();
     });
-    document.getElementById('treatmentNameFilter').addEventListener('input', event => {
+    document.getElementById('treatmentNameFilter').addEventListener('change', event => {
       commercialUi.treatmentName = event.target.value;
       renderTreatments();
     });
@@ -6729,7 +6741,7 @@
 
       document.addEventListener('change', event => {
         if (event.target.closest(
-          '#commercialManagerSelect, #commercialPriorityDate, .config-table, .commercial-input-table'
+          '#commercialManagerSelect, #commercialPriorityDate, #treatmentManagerFilter, #treatmentNameFilter, .config-table, .commercial-input-table'
         )) {
           setTimeout(scheduleEnhance, 0);
         }
