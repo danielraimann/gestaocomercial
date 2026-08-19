@@ -5826,9 +5826,38 @@
       'monthly-balance':['Reunir todo o quadro da agência entre os dias 20 e 25, das 8h às 9h30.','Apresentar o balanço do mês anterior de Orçamento, POBJ Produção/BSC e Supera.','Alinhar e direcionar o time a partir dos números.','Reconhecer boas práticas e parabenizar as entregas do mês.']
     };
 
-    function managerRecordKey(task) { return `${managerUi.date}:${task.id}`; }
+    function managerWeekStartIso(dateIso) {
+      const date = new Date(`${dateIso}T12:00:00`);
+      if (Number.isNaN(date.getTime())) return String(dateIso || '');
+      date.setDate(date.getDate() - (date.getDay() + 6) % 7);
+      const pad = value => String(value).padStart(2, '0');
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    }
+    function managerRecordKey(task) {
+      return task.period === 'weekly'
+        ? `week:${managerWeekStartIso(managerUi.date)}:${task.id}`
+        : `${managerUi.date}:${task.id}`;
+    }
     function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])); }
-    function managerRecord(task) { return state.managerArea.records[managerRecordKey(task)] || {status:'pending',priority:'normal',notes:'',pending:'',evidence:'',completedAt:''}; }
+    function managerLegacyWeeklyRecord(task) {
+      if (task.period !== 'weekly') return null;
+      const weekStart = managerWeekStartIso(managerUi.date);
+      const suffix = `:${task.id}`;
+      return Object.entries(state.managerArea.records)
+        .map(([key, record]) => {
+          if (!key.endsWith(suffix)) return null;
+          const legacyDate = key.slice(0, -suffix.length);
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(legacyDate) || managerWeekStartIso(legacyDate) !== weekStart) return null;
+          return { legacyDate, record };
+        })
+        .filter(Boolean)
+        .sort((a, b) => Number(b.record.status === 'done') - Number(a.record.status === 'done') || b.legacyDate.localeCompare(a.legacyDate))[0]?.record || null;
+    }
+    function managerRecord(task) {
+      return state.managerArea.records[managerRecordKey(task)]
+        || managerLegacyWeeklyRecord(task)
+        || {status:'pending',priority:'normal',notes:'',pending:'',evidence:'',completedAt:''};
+    }
     function managerTasksForView() { return MANAGER_TASKS.filter(task => task.period === managerUi.period); }
     function managerIsOverdue(task, record) {
       if (record.status === 'done' || task.period !== 'daily' || !task.time.includes('-')) return false;
