@@ -104,6 +104,22 @@
     }
     .tab-btn.active { color: var(--brand); border-bottom-color: var(--brand); }
 
+    .prototype-host {
+      min-height: calc(100vh - 190px);
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #f4f6f8;
+      box-shadow: var(--shadow);
+    }
+    .prototype-frame {
+      display: block;
+      width: 100%;
+      min-height: calc(100vh - 190px);
+      border: 0;
+      background: #f4f6f8;
+    }
+
     main { max-width: 1500px; margin: 24px auto 60px; padding: 0 clamp(12px, 3vw, 34px); }
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
@@ -1200,7 +1216,7 @@
     }
 
     @media print {
-      .app-header, .tabs-wrap, .no-print, #commercialPanel, #launchPanel { display: none !important; }
+      .app-header, .tabs-wrap, .no-print, #commercialPanel, #prototypePanel, #launchPanel { display: none !important; }
       body { background: #fff; }
       main { max-width: none; margin: 0; padding: 0; }
       #reportPanel { display: block !important; }
@@ -1689,7 +1705,7 @@
         border-radius: 10px;
       }
 
-      /* Alternância entre a visão comercial e a área do gestor */
+      /* Alternância entre as áreas principais */
       .tabs-wrap {
         position: sticky;
         top: calc(66px + env(safe-area-inset-top));
@@ -1704,7 +1720,7 @@
 
       .tabs {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         width: 100%;
         max-width: none;
         gap: 6px;
@@ -1715,11 +1731,16 @@
 
       .tab-btn {
         min-height: 42px;
-        padding: 8px 10px;
+        padding: 8px 4px;
         border: 0;
         border-radius: 9px;
-        font-size: 13px;
+        font-size: 11.5px;
         font-weight: 800;
+      }
+
+      .prototype-host,
+      .prototype-frame {
+        min-height: calc(100vh - 150px);
       }
 
       .tab-btn.active {
@@ -2910,6 +2931,7 @@
     <div class="tabs">
       <button class="tab-btn active" data-tab="commercialPanel">Gestão Comercial</button>
       <button class="tab-btn" data-tab="managerPanel">Área do Gestor</button>
+      <button class="tab-btn" data-tab="prototypePanel">Protótipo</button>
     </div>
   </nav>
 
@@ -3232,6 +3254,19 @@
       <div class="manager-hero"><div class="manager-hero-row"><div><h2>Área do Gestor</h2><p>Método de gestão transformado em rotina de execução, acompanhamento e registro.</p></div><div class="manager-progress"><div class="manager-progress-label"><span id="managerProgressTitle">Progresso</span><strong id="managerProgressText">0%</strong></div><div class="manager-progress-track"><div class="manager-progress-bar" id="managerProgressBar"></div></div></div></div></div>
       <div class="manager-toolbar no-print"><div class="manager-filters" role="tablist" aria-label="Periodicidade"><button class="manager-filter active" data-manager-period="daily">Diário</button><button class="manager-filter" data-manager-period="weekly">Semanal</button><button class="manager-filter" data-manager-period="monthly">Mensal</button></div><label class="manager-date">Data de acompanhamento <input id="managerDate" type="date"></label></div>
       <div class="manager-summary-grid" id="managerSummary"></div><div id="managerTaskArea"></div>
+    </section>
+
+    <section id="prototypePanel" class="tab-panel">
+      <div class="prototype-host">
+        <iframe
+          id="prototypeFrame"
+          class="prototype-frame"
+          src="prototipo.html"
+          title="Ambiente isolado do protótipo de importação F-LOG"
+          sandbox="allow-scripts allow-downloads"
+          referrerpolicy="no-referrer"
+        ></iframe>
+      </div>
     </section>
 
     <section id="launchPanel" class="tab-panel" hidden aria-hidden="true">
@@ -3945,6 +3980,33 @@
       if (id === 'reportPanel') renderReport();
       if (id === 'commercialPanel') renderCommercialAll();
       if (id === 'managerPanel') renderManagerArea();
+      if (id === 'prototypePanel') sendPrototypeCatalog();
+    }
+
+    function prototypeCatalogSnapshot() {
+      const source = state.commercial;
+      const data = source && Array.isArray(source.products) && Array.isArray(source.segments) && Array.isArray(source.managers)
+        ? source
+        : { products: [], segments: [], managers: [] };
+      return {
+        type: 'prototype-catalog',
+        catalogVersion: 1,
+        products: data.products
+          .filter(item => item && item.id && String(item.name || '').trim())
+          .map(item => ({ id: String(item.id), name: String(item.name).trim() })),
+        segments: data.segments
+          .filter(item => item && item.id && String(item.name || '').trim())
+          .map(item => ({ id: String(item.id), name: String(item.name).trim() })),
+        managers: data.managers
+          .filter(item => item && item.id && String(item.name || '').trim())
+          .map(item => ({ id: String(item.id), name: String(item.name).trim(), segmentId: String(item.segmentId || '') }))
+      };
+    }
+
+    function sendPrototypeCatalog() {
+      const frame = document.getElementById('prototypeFrame');
+      if (!frame?.contentWindow) return;
+      frame.contentWindow.postMessage(prototypeCatalogSnapshot(), '*');
     }
 
     function syncScoresWithCommercialManagers() {
@@ -5784,6 +5846,7 @@
     }
 
     document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+    document.getElementById('prototypeFrame')?.addEventListener('load', sendPrototypeCatalog);
 
     const MANAGER_TASKS = [
       {id:'daily-risk',period:'daily',time:'08:00-09:30',pillar:'Gestão de Crédito',title:'Devedora, Link de Vencidos e PDD',text:'Acompanhar valores que podem ser provisionados até o fim do mês e orientar a regularização das pendências.'},

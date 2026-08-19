@@ -1,0 +1,829 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="prototype-version" content="1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Protótipo de importação F-LOG</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --brand: #b51f2e;
+      --brand-dark: #851723;
+      --brand-soft: #fff1f2;
+      --ink: #20242b;
+      --muted: #66707c;
+      --line: #dfe3e8;
+      --surface: #fff;
+      --canvas: #f4f6f8;
+      --safe: #167347;
+      --safe-soft: #eaf7f0;
+      --warning: #8a5b00;
+      --warning-soft: #fff7dc;
+      --blue: #235caa;
+      --shadow: 0 10px 30px rgba(25, 31, 40, .08);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { background: var(--canvas); }
+    body { margin: 0; color: var(--ink); background: var(--canvas); }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .52; }
+    :focus-visible { outline: 3px solid rgba(35, 92, 170, .28); outline-offset: 2px; }
+
+    .shell { width: min(1460px, 100%); margin: 0 auto; padding: 22px clamp(12px, 2.5vw, 30px) 48px; }
+    .hero {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 14px;
+      padding: clamp(20px, 3vw, 32px);
+      border-radius: 18px;
+      color: #fff;
+      background: linear-gradient(125deg, #77131d 0%, #b51f2e 62%, #c84350 100%);
+      box-shadow: var(--shadow);
+    }
+    .hero h1 { margin: 7px 0 8px; font-size: clamp(24px, 3vw, 38px); line-height: 1.05; }
+    .hero p { max-width: 780px; margin: 0; color: rgba(255,255,255,.9); line-height: 1.5; }
+    .badge { display: inline-flex; padding: 5px 9px; border: 1px solid rgba(255,255,255,.38); border-radius: 999px; background: rgba(255,255,255,.12); font-size: 11px; font-weight: 900; letter-spacing: .09em; }
+    .memory-pill { flex: 0 0 auto; padding: 10px 13px; border-radius: 12px; background: rgba(255,255,255,.14); font-size: 12px; font-weight: 800; text-align: center; }
+
+    .safety {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 18px;
+      padding: 14px 16px;
+      border: 1px solid #efd69a;
+      border-radius: 13px;
+      background: var(--warning-soft);
+      color: #634800;
+    }
+    .safety-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #ffe9a8; font-weight: 950; }
+    .safety strong { display: block; margin-bottom: 2px; }
+    .safety span { font-size: 13px; line-height: 1.42; }
+
+    .card { margin-bottom: 16px; overflow: hidden; border: 1px solid var(--line); border-radius: 15px; background: var(--surface); box-shadow: 0 5px 18px rgba(25,31,40,.05); }
+    .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px 20px; border-bottom: 1px solid var(--line); background: #fbfcfd; }
+    .card-head h2 { margin: 0 0 4px; font-size: 19px; }
+    .card-head p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.42; }
+    .step { display: inline-grid; place-items: center; flex: 0 0 auto; width: 30px; height: 30px; border-radius: 9px; color: #fff; background: var(--brand); font-weight: 900; }
+    .head-title { display: flex; align-items: flex-start; gap: 10px; }
+    .card-body { padding: 18px 20px; }
+
+    .context-grid { display: grid; grid-template-columns: minmax(230px, 2fr) minmax(180px, 1fr); gap: 14px; }
+    label.field { display: grid; gap: 6px; color: #464e58; font-size: 12px; font-weight: 800; }
+    input, select, textarea { width: 100%; border: 1px solid #cdd3da; border-radius: 9px; color: var(--ink); background: #fff; }
+    input, select { min-height: 43px; padding: 9px 11px; }
+    textarea { min-height: 164px; padding: 11px 12px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; line-height: 1.45; tab-size: 4; }
+    input:focus, select:focus, textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(35,92,170,.11); }
+    .catalog-status { margin: 10px 0 0; color: var(--muted); font-size: 12px; }
+    .catalog-status.ready { color: var(--safe); font-weight: 800; }
+
+    .source-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; }
+    .source-card { min-width: 0; padding: 16px; border: 1px solid var(--line); border-radius: 13px; background: #fff; }
+    .source-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+    .source-title h3 { margin: 0; font-size: 16px; }
+    .source-tag { padding: 4px 8px; border-radius: 999px; color: var(--blue); background: #edf4ff; font-size: 10px; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
+    .source-card.extra .source-tag { color: #765006; background: #fff4d4; }
+    .button-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .btn { min-height: 39px; padding: 8px 13px; border: 1px solid transparent; border-radius: 9px; font-weight: 850; }
+    .btn.primary { color: #fff; background: var(--brand); }
+    .btn.dark { color: #fff; background: #353b44; }
+    .btn.ghost { color: #4f5864; border-color: #cfd4da; background: #fff; }
+    .btn.safe { color: #fff; background: var(--safe); }
+    .source-status { min-height: 18px; margin: 9px 0 0; color: var(--muted); font-size: 12px; }
+    .source-status.ok { color: var(--safe); font-weight: 800; }
+    .source-status.error { color: var(--brand-dark); font-weight: 800; }
+
+    .source-config { margin-top: 14px; padding-top: 14px; border-top: 1px dashed #d6dbe1; }
+    .source-config[hidden] { display: none; }
+    .config-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+    .config-grid label { display: grid; gap: 4px; color: var(--muted); font-size: 10px; font-weight: 850; }
+    .config-grid select { min-height: 38px; padding: 7px 8px; font-size: 12px; }
+    .preview-title { margin: 13px 0 6px; font-size: 11px; font-weight: 900; color: #555e69; text-transform: uppercase; letter-spacing: .04em; }
+    .table-scroll { max-width: 100%; overflow: auto; border: 1px solid var(--line); border-radius: 9px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 9px 10px; border-right: 1px solid #e8ebef; border-bottom: 1px solid #e8ebef; text-align: left; vertical-align: middle; }
+    th:last-child, td:last-child { border-right: 0; }
+    tr:last-child td { border-bottom: 0; }
+    th { color: #fff; background: #373c45; font-size: 11px; }
+    td { font-size: 12px; }
+    .preview-table { min-width: 520px; }
+    .preview-table td { max-width: 210px; padding: 6px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 10px; }
+    .preview-table tr.header-row td { color: #fff; background: #505762; font-weight: 850; }
+    .preview-table td.selected-col { background: #fff7dc; }
+    .preview-table tr.header-row td.selected-col { background: #744f08; }
+    .preview-note { margin: 6px 0 0; color: var(--muted); font-size: 10px; }
+
+    .mapping-toolbar, .simulation-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+    .summary-note { color: var(--muted); font-size: 12px; }
+    .mapping-table { min-width: 760px; }
+    .mapping-table td:first-child { font-weight: 800; }
+    .mapping-table select { min-width: 220px; min-height: 38px; padding: 6px 8px; font-size: 12px; }
+    .source-list { color: var(--muted); font-size: 11px; }
+    .suggestion { color: var(--blue); font-size: 11px; font-weight: 800; }
+    .empty { padding: 30px 16px; text-align: center; color: var(--muted); }
+    .callout { padding: 12px 14px; border: 1px solid #b9dec9; border-radius: 10px; color: #135b39; background: var(--safe-soft); font-size: 12px; line-height: 1.45; }
+
+    .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 0 0 12px; }
+    .kpi { padding: 13px 14px; border: 1px solid var(--line); border-radius: 11px; background: #fbfcfd; }
+    .kpi span { display: block; color: var(--muted); font-size: 10px; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
+    .kpi strong { display: block; margin-top: 3px; font-size: 23px; }
+    .result-table { min-width: 1040px; }
+    .result-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .result-table .chosen { color: var(--brand-dark); background: #fff7f7; font-weight: 900; }
+    .origin { min-width: 180px; color: #4e5863; font-size: 10px; line-height: 1.35; }
+    .duplicate-warning { display: block; margin-top: 3px; color: var(--warning); font-size: 9px; font-weight: 900; }
+    .result-status { min-height: 20px; margin: 10px 0 0; color: var(--muted); font-size: 12px; }
+    .result-status.error { color: var(--brand-dark); font-weight: 850; }
+    .result-status.ok { color: var(--safe); font-weight: 850; }
+
+    @media (max-width: 880px) {
+      .shell { padding: 10px 9px 30px; }
+      .hero { padding: 20px 17px; border-radius: 14px; }
+      .hero { display: block; }
+      .memory-pill { display: inline-block; margin-top: 13px; text-align: left; }
+      .safety { grid-template-columns: 1fr; }
+      .safety-icon { display: none; }
+      .card-head, .card-body { padding: 15px 13px; }
+      .context-grid, .source-grid { grid-template-columns: 1fr; }
+      .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 620px) {
+      .hero h1 { font-size: 27px; }
+      .config-grid { grid-template-columns: 1fr; }
+      .button-row .btn, .simulation-toolbar .btn { flex: 1 1 130px; }
+      .kpi strong { font-size: 20px; }
+      .mapping-table { min-width: 0; }
+      .mapping-table thead { display: none; }
+      .mapping-table tbody { display: grid; gap: 10px; padding: 8px; }
+      .mapping-table tr { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 11px; background: #fff; }
+      .mapping-table td { display: grid; gap: 3px; padding: 0; border: 0; }
+      .mapping-table td::before { content: attr(data-label); color: var(--muted); font-size: 9px; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
+      .mapping-table select { min-width: 0; }
+      .result-table { min-width: 0; }
+      .result-table thead { display: none; }
+      .result-table tbody { display: grid; gap: 10px; padding: 8px; }
+      .result-table tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 11px; border: 1px solid var(--line); border-radius: 11px; }
+      .result-table td { display: grid; gap: 2px; padding: 7px; border: 0; text-align: left !important; }
+      .result-table td::before { content: attr(data-label); color: var(--muted); font-size: 9px; font-weight: 900; text-transform: uppercase; }
+      .result-table td:first-child, .result-table td:last-child { grid-column: 1 / -1; }
+      .origin { min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <span class="badge">AMBIENTE DE PROTÓTIPO</span>
+        <h1>Importação assistida do F-LOG</h1>
+        <p>Cole duas fontes, reconheça a estrutura, relacione as nomenclaturas e confira qual seria o resultado antes de qualquer futura integração.</p>
+      </div>
+      <div class="memory-pill">Sessão temporária<br>Atualizar a página limpa tudo</div>
+    </header>
+
+    <div class="safety" role="note">
+      <div class="safety-icon">!</div>
+      <div><strong>Nada feito aqui altera o sistema atual.</strong><span>Este laboratório não grava no banco de dados, não atualiza o F-LOG e não conserva os dados colados. O resultado é apenas uma simulação local.</span></div>
+    </div>
+
+    <section class="card" aria-labelledby="contextTitle">
+      <div class="card-head">
+        <div class="head-title"><span class="step">1</span><div><h2 id="contextTitle">Defina o contexto</h2><p>Escolha para qual gerente a simulação será preparada.</p></div></div>
+      </div>
+      <div class="card-body">
+        <div class="context-grid">
+          <label class="field">Gerente de destino
+            <select id="managerSelect"><option value="">Aguardando catálogo do aplicativo…</option></select>
+          </label>
+          <label class="field">Data de referência
+            <input id="referenceDate" type="date">
+          </label>
+        </div>
+        <p class="catalog-status" id="catalogStatus" aria-live="polite">Aguardando os nomes cadastrados no Gestão Comercial.</p>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="sourcesTitle">
+      <div class="card-head">
+        <div class="head-title"><span class="step">2</span><div><h2 id="sourcesTitle">Cole as fontes</h2><p>A posição das linhas e colunas pode variar. Depois de ler, confirme as colunas reconhecidas.</p></div></div>
+      </div>
+      <div class="card-body">
+        <div class="source-grid">
+          <article class="source-card" data-source-card="official">
+            <div class="source-title"><h3>Fonte oficial</h3><span class="source-tag">Oficial</span></div>
+            <label class="field">Dados copiados do Excel
+              <textarea id="officialPaste" spellcheck="false" placeholder="Clique aqui e use Ctrl+V para colar as células copiadas do Excel."></textarea>
+            </label>
+            <div class="button-row"><button type="button" class="btn primary" data-read-source="official">Ler fonte oficial</button><button type="button" class="btn ghost" data-clear-source="official">Limpar</button></div>
+            <p class="source-status" id="officialStatus" aria-live="polite">Nenhum dado lido.</p>
+            <div class="source-config" id="officialConfig" hidden>
+              <div class="config-grid">
+                <label>Linha do cabeçalho<select id="officialHeader"></select></label>
+                <label>Coluna do indicador<select id="officialIndicator"></select></label>
+                <label>Coluna do objetivo<select id="officialObjective"></select></label>
+                <label>Coluna do realizado<select id="officialRealized"></select></label>
+              </div>
+              <p class="preview-title">Prévia da leitura</p>
+              <div class="table-scroll" id="officialPreview"></div>
+              <p class="preview-note" id="officialPreviewNote"></p>
+            </div>
+          </article>
+
+          <article class="source-card extra" data-source-card="unofficial">
+            <div class="source-title"><h3>Fonte extraoficial</h3><span class="source-tag">Extraoficial</span></div>
+            <label class="field">Dados copiados do Excel
+              <textarea id="unofficialPaste" spellcheck="false" placeholder="Cole a segunda fonte mesmo que a tabela tenha outra organização."></textarea>
+            </label>
+            <div class="button-row"><button type="button" class="btn primary" data-read-source="unofficial">Ler fonte extraoficial</button><button type="button" class="btn ghost" data-clear-source="unofficial">Limpar</button></div>
+            <p class="source-status" id="unofficialStatus" aria-live="polite">Nenhum dado lido.</p>
+            <div class="source-config" id="unofficialConfig" hidden>
+              <div class="config-grid">
+                <label>Linha do cabeçalho<select id="unofficialHeader"></select></label>
+                <label>Coluna do indicador<select id="unofficialIndicator"></select></label>
+                <label>Coluna do objetivo<select id="unofficialObjective"></select></label>
+                <label>Coluna do realizado<select id="unofficialRealized"></select></label>
+              </div>
+              <p class="preview-title">Prévia da leitura</p>
+              <div class="table-scroll" id="unofficialPreview"></div>
+              <p class="preview-note" id="unofficialPreviewNote"></p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="mappingTitle">
+      <div class="card-head">
+        <div class="head-title"><span class="step">3</span><div><h2 id="mappingTitle">Relacione os indicadores</h2><p>Exemplo: “Capital de Giro” na fonte pode corresponder a “Crédito PJ” no aplicativo.</p></div></div>
+      </div>
+      <div class="card-body">
+        <div class="mapping-toolbar"><div class="summary-note" id="mappingSummary">Leia pelo menos uma fonte para montar as correspondências.</div></div>
+        <div class="table-scroll">
+          <table class="mapping-table">
+            <thead><tr><th>Nome encontrado</th><th>Origem</th><th>Sugestão</th><th>Produto correspondente</th></tr></thead>
+            <tbody id="mappingBody"><tr><td colspan="4" class="empty">Nenhum indicador disponível.</td></tr></tbody>
+          </table>
+        </div>
+        <div class="callout" style="margin-top:12px">As correspondências valem somente enquanto esta página estiver aberta. Linhas repetidas dentro de uma fonte são protegidas contra soma dupla: o protótipo conserva o maior valor encontrado.</div>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="simulationTitle">
+      <div class="card-head">
+        <div class="head-title"><span class="step">4</span><div><h2 id="simulationTitle">Confira a simulação</h2><p>Para cada campo, o resultado considera o maior valor disponível entre as duas fontes.</p></div></div>
+      </div>
+      <div class="card-body">
+        <div class="simulation-toolbar">
+          <div class="button-row" style="margin:0"><button type="button" class="btn safe" id="simulateBtn">Gerar simulação</button><button type="button" class="btn ghost" id="clearAllBtn">Limpar tudo</button></div>
+          <div class="button-row" style="margin:0"><button type="button" class="btn dark" id="exportCsvBtn" disabled>Exportar CSV</button><button type="button" class="btn dark" id="exportJsonBtn" disabled>Exportar JSON</button></div>
+        </div>
+        <div class="kpis" id="simulationKpis">
+          <div class="kpi"><span>Linhas lidas</span><strong>0</strong></div><div class="kpi"><span>Mapeadas</span><strong>0</strong></div><div class="kpi"><span>Divergências</span><strong>0</strong></div><div class="kpi"><span>Produtos simulados</span><strong>0</strong></div>
+        </div>
+        <div class="table-scroll">
+          <table class="result-table">
+            <thead><tr><th>Produto destino</th><th>Obj. oficial</th><th>Obj. extra</th><th>Objetivo escolhido</th><th>Real. oficial</th><th>Real. extra</th><th>Realizado escolhido</th><th>Origem</th></tr></thead>
+            <tbody id="resultBody"><tr><td colspan="8" class="empty">A simulação aparecerá aqui.</td></tr></tbody>
+          </table>
+        </div>
+        <p class="result-status" id="resultStatus" aria-live="polite"></p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    function normalizeText(value) {
+      return String(value == null ? '' : value)
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLocaleLowerCase('pt-BR')
+        .replace(/[•·▪►▶→↳]/g, ' ')
+        .replace(/[^a-z0-9%]+/g, ' ')
+        .trim()
+        .replace(/\s+/g, ' ');
+    }
+
+    function normalizeLabel(value) {
+      return normalizeText(value)
+        .replace(/\b(vl|qt|qtd|valor|quantidade)\b/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function parseDelimited(text) {
+      const raw = String(text || '').replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
+      if (!raw.trim()) return [];
+      const sample = raw.split('\n').slice(0, 12);
+      const tabCount = sample.reduce((sum, line) => sum + (line.match(/\t/g) || []).length, 0);
+      const semicolonCount = sample.reduce((sum, line) => sum + (line.match(/;/g) || []).length, 0);
+      const delimiter = tabCount >= semicolonCount && tabCount > 0 ? '\t' : ';';
+      const rows = [];
+      let row = [];
+      let cell = '';
+      let quoted = false;
+      for (let index = 0; index < raw.length; index += 1) {
+        const char = raw[index];
+        if (char === '"') {
+          if (quoted && raw[index + 1] === '"') { cell += '"'; index += 1; }
+          else quoted = !quoted;
+        } else if (char === delimiter && !quoted) {
+          row.push(cell.trim()); cell = '';
+        } else if (char === '\n' && !quoted) {
+          row.push(cell.trim()); rows.push(row); row = []; cell = '';
+        } else {
+          cell += char;
+        }
+      }
+      row.push(cell.trim());
+      if (row.some(value => value !== '') || !rows.length) rows.push(row);
+      while (rows.length && rows[rows.length - 1].every(value => !String(value).trim())) rows.pop();
+      return rows;
+    }
+
+    function parseBrazilNumber(value) {
+      let raw = String(value == null ? '' : value).trim();
+      if (!raw || /^[\-–—]+$/.test(raw)) return null;
+      const negativeParentheses = /^\(.*\)$/.test(raw);
+      raw = raw.replace(/[()\sR$%]/g, '').replace(/[^0-9,.-]/g, '');
+      if (!raw || !/[0-9]/.test(raw)) return null;
+      const comma = raw.lastIndexOf(',');
+      const dot = raw.lastIndexOf('.');
+      if (comma >= 0 && dot >= 0) {
+        if (comma > dot) raw = raw.replace(/\./g, '').replace(',', '.');
+        else raw = raw.replace(/,/g, '');
+      } else if (comma >= 0) {
+        raw = raw.replace(/\./g, '').replace(',', '.');
+      } else if ((raw.match(/\./g) || []).length > 1) {
+        raw = raw.replace(/\./g, '');
+      } else if (dot >= 0) {
+        const decimals = raw.length - dot - 1;
+        if (decimals === 3) raw = raw.replace('.', '');
+      }
+      let number = Number(raw);
+      if (!Number.isFinite(number)) return null;
+      if (negativeParentheses) number = -Math.abs(number);
+      return number;
+    }
+
+    function columnName(index) {
+      let number = Number(index) + 1;
+      let label = '';
+      while (number > 0) {
+        const remainder = (number - 1) % 26;
+        label = String.fromCharCode(65 + remainder) + label;
+        number = Math.floor((number - 1) / 26);
+      }
+      return label;
+    }
+
+    function headerScore(value, kind) {
+      const text = normalizeText(value);
+      if (!text) return 0;
+      const rules = {
+        indicator: [
+          [/^(produto|indicador|entrega|item|descricao|descrição)$/, 12],
+          [/\b(produto|indicador|entrega)\b/, 8],
+          [/\b(descricao|item)\b/, 5]
+        ],
+        objective: [
+          [/^(objetivo|obj mes|obj mês|meta|meta mensal)$/, 12],
+          [/\b(obj|objetivo|meta)\b.*\b(mes|mensal)?\b/, 9],
+          [/\b(orcamento|orçamento)\b/, 5]
+        ],
+        realized: [
+          [/^(realizado|real acum|real acumulado|producao|produção)$/, 12],
+          [/\b(real|realizado|producao)\b.*\b(acum|acumulado|mes)?\b/, 9],
+          [/\binformado\b.*\bflog\b/, 7]
+        ]
+      };
+      return rules[kind].reduce((best, rule) => rule[0].test(text) ? Math.max(best, rule[1]) : best, 0);
+    }
+
+    function detectLayout(matrix) {
+      const maxRows = Math.min(matrix.length, 60);
+      let best = { score: -1, headerRow: 0, indicatorCol: 0, objectiveCol: -1, realizedCol: -1 };
+      for (let rowIndex = 0; rowIndex < maxRows; rowIndex += 1) {
+        const row = matrix[rowIndex] || [];
+        const rankings = {};
+        ['indicator', 'objective', 'realized'].forEach(kind => {
+          rankings[kind] = row.map((cell, col) => ({ col, score: headerScore(cell, kind) })).sort((a, b) => b.score - a.score);
+        });
+        const used = new Set();
+        const chosen = {};
+        ['indicator', 'objective', 'realized'].forEach(kind => {
+          const candidate = rankings[kind].find(item => item.score > 0 && !used.has(item.col));
+          chosen[kind] = candidate || { col: -1, score: 0 };
+          if (candidate) used.add(candidate.col);
+        });
+        const coverage = Object.values(chosen).filter(item => item.score > 0).length;
+        const score = Object.values(chosen).reduce((sum, item) => sum + item.score, 0) + coverage * 5;
+        if (score > best.score) {
+          best = { score, headerRow: rowIndex, indicatorCol: chosen.indicator.col, objectiveCol: chosen.objective.col, realizedCol: chosen.realized.col };
+        }
+      }
+      const width = matrix.reduce((max, row) => Math.max(max, row.length), 0);
+      if (best.indicatorCol < 0) best.indicatorCol = 0;
+      const numericColumns = [];
+      for (let col = 0; col < width; col += 1) {
+        if (col === best.indicatorCol) continue;
+        const count = matrix.slice(best.headerRow + 1, best.headerRow + 31).filter(row => parseBrazilNumber(row[col]) !== null).length;
+        if (count) numericColumns.push({ col, count });
+      }
+      numericColumns.sort((a, b) => b.count - a.count || a.col - b.col);
+      if (best.objectiveCol < 0) best.objectiveCol = numericColumns[0]?.col ?? -1;
+      if (best.realizedCol < 0) best.realizedCol = numericColumns.find(item => item.col !== best.objectiveCol)?.col ?? -1;
+      return best;
+    }
+
+    function extractRows(matrix, config) {
+      const rows = [];
+      const indicatorCol = Number(config.indicatorCol);
+      const objectiveCol = Number(config.objectiveCol);
+      const realizedCol = Number(config.realizedCol);
+      for (let index = Number(config.headerRow) + 1; index < matrix.length; index += 1) {
+        const sourceRow = matrix[index] || [];
+        const label = String(sourceRow[indicatorCol] || '').trim();
+        if (!label) continue;
+        const objective = objectiveCol >= 0 ? parseBrazilNumber(sourceRow[objectiveCol]) : null;
+        const realized = realizedCol >= 0 ? parseBrazilNumber(sourceRow[realizedCol]) : null;
+        if (objective === null && realized === null) continue;
+        rows.push({ label, objective, realized, rowNumber: index + 1 });
+      }
+      return rows;
+    }
+
+    function maxAvailable(first, second) {
+      if (first === null || first === undefined) return second === undefined ? null : second;
+      if (second === null || second === undefined) return first;
+      return Math.max(first, second);
+    }
+
+    function tokenSimilarity(first, second) {
+      const a = new Set(normalizeLabel(first).split(' ').filter(Boolean));
+      const b = new Set(normalizeLabel(second).split(' ').filter(Boolean));
+      if (!a.size || !b.size) return 0;
+      const intersection = [...a].filter(token => b.has(token)).length;
+      const union = new Set([...a, ...b]).size;
+      const exactBonus = normalizeLabel(first).startsWith(normalizeLabel(second)) || normalizeLabel(second).startsWith(normalizeLabel(first)) ? .2 : 0;
+      return Math.min(1, intersection / union + exactBonus);
+    }
+
+    function reconcileRows(officialRows, unofficialRows, mappings, products) {
+      function aggregate(rows) {
+        const grouped = new Map();
+        rows.forEach(row => {
+          const targetId = mappings[normalizeLabel(row.label)];
+          if (!targetId || targetId === '__ignore__') return;
+          const current = grouped.get(targetId) || { objective: null, realized: null, count: 0 };
+          current.objective = maxAvailable(current.objective, row.objective);
+          current.realized = maxAvailable(current.realized, row.realized);
+          current.count += 1;
+          grouped.set(targetId, current);
+        });
+        return grouped;
+      }
+      const official = aggregate(officialRows);
+      const unofficial = aggregate(unofficialRows);
+      const productMap = new Map(products.map(product => [product.id, product]));
+      return [...new Set([...official.keys(), ...unofficial.keys()])].map(productId => {
+        const first = official.get(productId) || { objective: null, realized: null, count: 0 };
+        const second = unofficial.get(productId) || { objective: null, realized: null, count: 0 };
+        return {
+          productId,
+          productName: productMap.get(productId)?.name || 'Produto não encontrado',
+          officialObjective: first.objective,
+          unofficialObjective: second.objective,
+          chosenObjective: maxAvailable(first.objective, second.objective),
+          officialRealized: first.realized,
+          unofficialRealized: second.realized,
+          chosenRealized: maxAvailable(first.realized, second.realized),
+          officialCount: first.count,
+          unofficialCount: second.count
+        };
+      }).sort((a, b) => a.productName.localeCompare(b.productName, 'pt-BR', { sensitivity: 'base' }));
+    }
+
+    const dom = id => document.getElementById(id);
+    const escapeHtml = value => String(value == null ? '' : value).replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]));
+    const formatNumber = value => value === null || value === undefined ? '—' : Number(value).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+    const sourceNames = { official: 'Oficial', unofficial: 'Extraoficial' };
+
+    function emptySource() {
+      return { matrix: [], headerRow: 0, indicatorCol: 0, objectiveCol: -1, realizedCol: -1, rows: [] };
+    }
+
+    const model = {
+      catalog: { products: [], managers: [], segments: [] },
+      sources: { official: emptySource(), unofficial: emptySource() },
+      mappings: Object.create(null),
+      simulation: []
+    };
+
+    function localIsoDate() {
+      const date = new Date();
+      const pad = value => String(value).padStart(2, '0');
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    }
+    dom('referenceDate').value = localIsoDate();
+
+    function sanitizeCatalogItems(items, fields) {
+      if (!Array.isArray(items)) return [];
+      return items.slice(0, 1000).map(item => {
+        const cleaned = {};
+        fields.forEach(field => cleaned[field] = String(item?.[field] || '').slice(0, 250));
+        return cleaned;
+      }).filter(item => item.id && item.name);
+    }
+
+    function renderCatalog() {
+      const current = dom('managerSelect').value;
+      const segmentNames = new Map(model.catalog.segments.map(segment => [segment.id, segment.name]));
+      const managers = [...model.catalog.managers].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }));
+      dom('managerSelect').innerHTML = '<option value="">Selecione um gerente</option>' + managers.map(manager => {
+        const segment = segmentNames.get(manager.segmentId);
+        return `<option value="${escapeHtml(manager.id)}">${escapeHtml(manager.name)}${segment ? ` — ${escapeHtml(segment)}` : ''}</option>`;
+      }).join('');
+      if (managers.some(manager => manager.id === current)) dom('managerSelect').value = current;
+      dom('catalogStatus').textContent = `${model.catalog.products.length} produto(s), ${managers.length} gerente(s) e ${model.catalog.segments.length} segmento(s) recebidos em modo somente leitura.`;
+      dom('catalogStatus').className = 'catalog-status ready';
+      renderMappings();
+    }
+
+    window.addEventListener('message', event => {
+      if (event.source !== window.parent) return;
+      const payload = event.data;
+      if (!payload || payload.type !== 'prototype-catalog' || payload.catalogVersion !== 1) return;
+      model.catalog = {
+        products: sanitizeCatalogItems(payload.products, ['id', 'name']),
+        managers: sanitizeCatalogItems(payload.managers, ['id', 'name', 'segmentId']),
+        segments: sanitizeCatalogItems(payload.segments, ['id', 'name'])
+      };
+      renderCatalog();
+    });
+
+    function selectOptions(source, allowNone) {
+      const width = source.matrix.reduce((max, row) => Math.max(max, row.length), 0);
+      const header = source.matrix[source.headerRow] || [];
+      const options = [];
+      if (allowNone) options.push('<option value="-1">Não informada</option>');
+      for (let index = 0; index < width; index += 1) {
+        const title = String(header[index] || '').trim();
+        options.push(`<option value="${index}">${columnName(index)}${title ? ` — ${escapeHtml(title).slice(0, 80)}` : ''}</option>`);
+      }
+      return options.join('');
+    }
+
+    function renderPreview(key) {
+      const source = model.sources[key];
+      const visibleRows = source.matrix.slice(0, 14);
+      const width = Math.min(12, source.matrix.reduce((max, row) => Math.max(max, row.length), 0));
+      const selectedColumns = new Set([source.indicatorCol, source.objectiveCol, source.realizedCol].filter(index => index >= 0));
+      const html = `<table class="preview-table"><tbody>${visibleRows.map((row, rowIndex) => `<tr class="${rowIndex === source.headerRow ? 'header-row' : ''}">${Array.from({ length: width }, (_, colIndex) => `<td class="${selectedColumns.has(colIndex) ? 'selected-col' : ''}" title="${escapeHtml(row[colIndex] || '')}">${escapeHtml(row[colIndex] || '')}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+      dom(`${key}Preview`).innerHTML = html;
+      const hiddenRows = Math.max(0, source.matrix.length - visibleRows.length);
+      const hiddenCols = Math.max(0, source.matrix.reduce((max, row) => Math.max(max, row.length), 0) - width);
+      dom(`${key}PreviewNote`).textContent = `Mostrando até 14 linhas e 12 colunas${hiddenRows || hiddenCols ? ` · ocultas na prévia: ${hiddenRows} linha(s), ${hiddenCols} coluna(s)` : ''}.`;
+    }
+
+    function refreshSource(key) {
+      const source = model.sources[key];
+      source.rows = extractRows(source.matrix, source);
+      dom(`${key}Status`).textContent = `${source.matrix.length} linha(s) colada(s) · ${source.rows.length} indicador(es) com valor reconhecido.`;
+      dom(`${key}Status`).className = 'source-status ok';
+      renderPreview(key);
+      model.simulation = [];
+      renderMappings();
+      renderSimulation();
+    }
+
+    function renderSourceConfig(key) {
+      const source = model.sources[key];
+      const headerSelect = dom(`${key}Header`);
+      headerSelect.innerHTML = source.matrix.map((row, index) => `<option value="${index}">Linha ${index + 1}${row.some(value => String(value).trim()) ? ` — ${escapeHtml(row.filter(Boolean).slice(0, 3).join(' | ')).slice(0, 100)}` : ' — vazia'}</option>`).join('');
+      headerSelect.value = String(source.headerRow);
+      ['Indicator', 'Objective', 'Realized'].forEach(suffix => {
+        const property = suffix.charAt(0).toLowerCase() + suffix.slice(1) + 'Col';
+        const select = dom(`${key}${suffix}`);
+        select.innerHTML = selectOptions(source, suffix !== 'Indicator');
+        select.value = String(source[property]);
+      });
+      dom(`${key}Config`).hidden = false;
+      refreshSource(key);
+    }
+
+    function readSource(key) {
+      const status = dom(`${key}Status`);
+      const matrix = parseDelimited(dom(`${key}Paste`).value);
+      if (!matrix.length || matrix.every(row => row.every(value => !String(value).trim()))) {
+        status.textContent = 'Cole uma tabela antes de continuar.';
+        status.className = 'source-status error';
+        return;
+      }
+      const layout = detectLayout(matrix);
+      model.sources[key] = { matrix, headerRow: layout.headerRow, indicatorCol: layout.indicatorCol, objectiveCol: layout.objectiveCol, realizedCol: layout.realizedCol, rows: [] };
+      renderSourceConfig(key);
+    }
+
+    function clearSource(key) {
+      model.sources[key] = emptySource();
+      dom(`${key}Paste`).value = '';
+      dom(`${key}Config`).hidden = true;
+      dom(`${key}Status`).textContent = 'Nenhum dado lido.';
+      dom(`${key}Status`).className = 'source-status';
+      model.simulation = [];
+      renderMappings();
+      renderSimulation();
+    }
+
+    document.querySelectorAll('[data-read-source]').forEach(button => button.addEventListener('click', () => readSource(button.dataset.readSource)));
+    document.querySelectorAll('[data-clear-source]').forEach(button => button.addEventListener('click', () => clearSource(button.dataset.clearSource)));
+
+    ['official', 'unofficial'].forEach(key => {
+      dom(`${key}Header`).addEventListener('change', event => {
+        const source = model.sources[key];
+        source.headerRow = Number(event.target.value);
+        renderSourceConfig(key);
+      });
+      [['Indicator','indicatorCol'], ['Objective','objectiveCol'], ['Realized','realizedCol']].forEach(([suffix, property]) => {
+        dom(`${key}${suffix}`).addEventListener('change', event => {
+          model.sources[key][property] = Number(event.target.value);
+          refreshSource(key);
+        });
+      });
+    });
+
+    function mappingItems() {
+      const items = new Map();
+      Object.entries(model.sources).forEach(([key, source]) => source.rows.forEach(row => {
+        const normalized = normalizeLabel(row.label);
+        if (!normalized) return;
+        const item = items.get(normalized) || { normalized, label: row.label, sources: new Set(), count: 0 };
+        item.sources.add(sourceNames[key]);
+        item.count += 1;
+        items.set(normalized, item);
+      }));
+      return [...items.values()].sort((a, b) => a.label.localeCompare(b.label, 'pt-BR', { sensitivity: 'base' }));
+    }
+
+    function suggestedProduct(label) {
+      const ranked = model.catalog.products.map(product => ({ product, score: tokenSimilarity(label, product.name) })).sort((a, b) => b.score - a.score);
+      return ranked[0]?.score >= .42 ? ranked[0] : null;
+    }
+
+    function renderMappings() {
+      const items = mappingItems();
+      const products = [...model.catalog.products].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }));
+      items.forEach(item => {
+        if (Object.prototype.hasOwnProperty.call(model.mappings, item.normalized)) return;
+        const exact = products.find(product => normalizeLabel(product.name) === item.normalized);
+        if (exact) model.mappings[item.normalized] = exact.id;
+      });
+      const mapped = items.filter(item => model.mappings[item.normalized] && model.mappings[item.normalized] !== '__ignore__').length;
+      const ignored = items.filter(item => model.mappings[item.normalized] === '__ignore__').length;
+      dom('mappingSummary').textContent = items.length ? `${mapped} de ${items.length} nomenclatura(s) mapeada(s) · ${ignored} ignorada(s).` : 'Leia pelo menos uma fonte para montar as correspondências.';
+      if (!items.length) {
+        dom('mappingBody').innerHTML = '<tr><td colspan="4" class="empty">Nenhum indicador disponível.</td></tr>';
+        return;
+      }
+      dom('mappingBody').innerHTML = items.map(item => {
+        const suggestion = suggestedProduct(item.label);
+        const selected = model.mappings[item.normalized] || '';
+        const options = `<option value="">Selecione…</option><option value="__ignore__">Ignorar esta linha</option>${products.map(product => `<option value="${escapeHtml(product.id)}" ${selected === product.id ? 'selected' : ''}>${escapeHtml(product.name)}</option>`).join('')}`;
+        return `<tr><td data-label="Nome encontrado">${escapeHtml(item.label)}${item.count > 1 ? `<span class="duplicate-warning">${item.count} ocorrências</span>` : ''}</td><td data-label="Origem" class="source-list">${escapeHtml([...item.sources].join(' + '))}</td><td data-label="Sugestão" class="suggestion">${suggestion ? `${escapeHtml(suggestion.product.name)} (${Math.round(suggestion.score * 100)}%)` : 'Sem sugestão segura'}</td><td data-label="Produto correspondente"><select data-mapping-key="${escapeHtml(item.normalized)}" aria-label="Produto correspondente a ${escapeHtml(item.label)}">${options}</select></td></tr>`;
+      }).join('');
+      dom('mappingBody').querySelectorAll('[data-mapping-key]').forEach(select => {
+        select.value = model.mappings[select.dataset.mappingKey] || '';
+        select.addEventListener('change', event => {
+          const key = event.target.dataset.mappingKey;
+          if (event.target.value) model.mappings[key] = event.target.value;
+          else delete model.mappings[key];
+          model.simulation = [];
+          renderMappings();
+          renderSimulation();
+        });
+      });
+    }
+
+    function valueOrigin(official, unofficial) {
+      if (official === null && unofficial === null) return 'Sem valor';
+      if (official === null) return 'Extraoficial';
+      if (unofficial === null) return 'Oficial';
+      if (official === unofficial) return 'Ambas (mesmo valor)';
+      return official > unofficial ? 'Oficial (maior)' : 'Extraoficial (maior)';
+    }
+
+    function simulationMeta() {
+      const manager = model.catalog.managers.find(item => item.id === dom('managerSelect').value);
+      const segment = manager && model.catalog.segments.find(item => item.id === manager.segmentId);
+      return { managerId: manager?.id || '', managerName: manager?.name || '', segmentName: segment?.name || '', referenceDate: dom('referenceDate').value || '' };
+    }
+
+    function runSimulation() {
+      const meta = simulationMeta();
+      const items = mappingItems();
+      const unresolved = items.filter(item => !model.mappings[item.normalized]);
+      if (!meta.managerId) return setResultStatus('Selecione o gerente de destino.', 'error');
+      if (!dom('referenceDate').value) return setResultStatus('Informe a data de referência.', 'error');
+      if (!items.length) return setResultStatus('Leia ao menos uma fonte com indicadores reconhecidos.', 'error');
+      if (unresolved.length) return setResultStatus(`Resolva ou ignore ${unresolved.length} nomenclatura(s) antes de simular.`, 'error');
+      model.simulation = reconcileRows(model.sources.official.rows, model.sources.unofficial.rows, model.mappings, model.catalog.products);
+      renderSimulation();
+      setResultStatus(`${model.simulation.length} produto(s) conciliado(s) para ${meta.managerName}. Nenhum dado foi gravado.`, 'ok');
+    }
+
+    function setResultStatus(message, type) {
+      dom('resultStatus').textContent = message;
+      dom('resultStatus').className = `result-status ${type || ''}`.trim();
+    }
+
+    function renderSimulation() {
+      const items = mappingItems();
+      const mapped = items.filter(item => model.mappings[item.normalized] && model.mappings[item.normalized] !== '__ignore__').length;
+      const lineCount = model.sources.official.rows.length + model.sources.unofficial.rows.length;
+      const divergences = model.simulation.filter(row =>
+        row.officialObjective !== null && row.unofficialObjective !== null && row.officialObjective !== row.unofficialObjective ||
+        row.officialRealized !== null && row.unofficialRealized !== null && row.officialRealized !== row.unofficialRealized
+      ).length;
+      dom('simulationKpis').innerHTML = [
+        ['Linhas lidas', lineCount], ['Mapeadas', mapped], ['Divergências', divergences], ['Produtos simulados', model.simulation.length]
+      ].map(([label, value]) => `<div class="kpi"><span>${label}</span><strong>${value}</strong></div>`).join('');
+      dom('exportCsvBtn').disabled = !model.simulation.length;
+      dom('exportJsonBtn').disabled = !model.simulation.length;
+      if (!model.simulation.length) {
+        dom('resultBody').innerHTML = '<tr><td colspan="8" class="empty">A simulação aparecerá aqui.</td></tr>';
+        return;
+      }
+      dom('resultBody').innerHTML = model.simulation.map(row => {
+        const objectiveOrigin = valueOrigin(row.officialObjective, row.unofficialObjective);
+        const realizedOrigin = valueOrigin(row.officialRealized, row.unofficialRealized);
+        const duplicate = row.officialCount > 1 || row.unofficialCount > 1 ? `<span class="duplicate-warning">Maior valor preservado em linha repetida</span>` : '';
+        return `<tr><td data-label="Produto destino"><strong>${escapeHtml(row.productName)}</strong>${duplicate}</td><td data-label="Obj. oficial" class="num">${formatNumber(row.officialObjective)}</td><td data-label="Obj. extra" class="num">${formatNumber(row.unofficialObjective)}</td><td data-label="Objetivo escolhido" class="num chosen">${formatNumber(row.chosenObjective)}</td><td data-label="Real. oficial" class="num">${formatNumber(row.officialRealized)}</td><td data-label="Real. extra" class="num">${formatNumber(row.unofficialRealized)}</td><td data-label="Realizado escolhido" class="num chosen">${formatNumber(row.chosenRealized)}</td><td data-label="Origem" class="origin">Objetivo: ${objectiveOrigin}<br>Realizado: ${realizedOrigin}</td></tr>`;
+      }).join('');
+    }
+
+    function clearAll() {
+      clearSource('official');
+      clearSource('unofficial');
+      model.mappings = Object.create(null);
+      model.simulation = [];
+      dom('managerSelect').value = '';
+      dom('referenceDate').value = localIsoDate();
+      setResultStatus('Dados temporários removidos.', 'ok');
+      renderMappings();
+      renderSimulation();
+    }
+
+    function safeCsvCell(value) {
+      let text = String(value == null ? '' : value);
+      if (/^[=+\-@]/.test(text)) text = `'${text}`;
+      return `"${text.replace(/"/g, '""')}"`;
+    }
+
+    function downloadFile(filename, content, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function exportCsv() {
+      if (!model.simulation.length) return;
+      const meta = simulationMeta();
+      const headers = ['Gerente','Segmento','Data','Produto','Objetivo oficial','Objetivo extraoficial','Objetivo escolhido','Realizado oficial','Realizado extraoficial','Realizado escolhido','Origem objetivo','Origem realizado'];
+      const rows = model.simulation.map(row => [meta.managerName, meta.segmentName, meta.referenceDate, row.productName, row.officialObjective, row.unofficialObjective, row.chosenObjective, row.officialRealized, row.unofficialRealized, row.chosenRealized, valueOrigin(row.officialObjective, row.unofficialObjective), valueOrigin(row.officialRealized, row.unofficialRealized)]);
+      const csv = '\uFEFF' + [headers, ...rows].map(row => row.map(safeCsvCell).join(';')).join('\r\n');
+      downloadFile(`simulacao-flog-${meta.referenceDate || 'sem-data'}.csv`, csv, 'text/csv;charset=utf-8');
+    }
+
+    function exportJson() {
+      if (!model.simulation.length) return;
+      const meta = simulationMeta();
+      const payload = { prototype: true, saved: false, generatedAt: new Date().toISOString(), ...meta, results: model.simulation };
+      downloadFile(`simulacao-flog-${meta.referenceDate || 'sem-data'}.json`, JSON.stringify(payload, null, 2), 'application/json;charset=utf-8');
+    }
+
+    dom('simulateBtn').addEventListener('click', runSimulation);
+    dom('clearAllBtn').addEventListener('click', clearAll);
+    dom('exportCsvBtn').addEventListener('click', exportCsv);
+    dom('exportJsonBtn').addEventListener('click', exportJson);
+    dom('managerSelect').addEventListener('change', () => { model.simulation = []; renderSimulation(); setResultStatus('', ''); });
+    dom('referenceDate').addEventListener('change', () => { model.simulation = []; renderSimulation(); setResultStatus('', ''); });
+    renderMappings();
+    renderSimulation();
+  </script>
+</body>
+</html>
