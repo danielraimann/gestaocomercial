@@ -5499,6 +5499,12 @@
       return commercialData().managers.find(manager => manager.id === item.managerId)?.name || 'Gerente não informado';
     }
 
+    function compareTreatmentRowsByProgress(a, b) {
+      return Number(a.metrics.status === 'Concluída') - Number(b.metrics.status === 'Concluída')
+        || b.metrics.progress - a.metrics.progress
+        || a.item.name.localeCompare(b.item.name, 'pt-BR');
+    }
+
     function filteredTreatmentItems() {
       const nameFilter = String(commercialUi.treatmentName || '').trim().toLocaleLowerCase('pt-BR');
       const validManagerIds = new Set(commercialData().managers.map(manager => manager.id));
@@ -5551,7 +5557,7 @@
       const businessDays = treatmentBusinessDaysRemaining();
       const filtered = filteredTreatmentItems();
       const items = filtered.map(item => ({ item, metrics: treatmentMetrics(item, businessDays) }))
-        .sort((a, b) => Number(a.metrics.status === 'Concluída') - Number(b.metrics.status === 'Concluída') || a.item.name.localeCompare(b.item.name, 'pt-BR'));
+        .sort(compareTreatmentRowsByProgress);
       const filterSummary = document.getElementById('treatmentFilterSummary');
       if (filterSummary) filterSummary.textContent = `${items.length} de ${(state.commercialTreatments || []).length} tratativa(s)`;
       const totals = items.reduce((sum, row) => ({
