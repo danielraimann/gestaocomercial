@@ -1543,8 +1543,9 @@
       body {
         min-width: 0;
         overflow-x: hidden;
-        padding-bottom: calc(82px + env(safe-area-inset-bottom));
-        background: #f2f4f7;
+        padding-bottom: calc(94px + env(safe-area-inset-bottom));
+        background: #eef1f5;
+        color: #171b21;
       }
 
       button,
@@ -1578,10 +1579,28 @@
       input[type="date"],
       input[type="email"],
       input[type="password"],
+      input[type="search"],
+      textarea,
       select {
         min-height: var(--mobile-touch);
         padding: 11px 12px;
         border-radius: 10px;
+      }
+
+      input,
+      select,
+      textarea {
+        max-width: 100%;
+        border-color: #c7cdd6;
+        box-shadow: 0 1px 2px rgba(25, 31, 40, .035);
+      }
+
+      .num,
+      input[type="number"],
+      .commercial-money-input,
+      .treatment-kpi strong,
+      .manager-summary strong {
+        font-variant-numeric: tabular-nums;
       }
 
       /* Login */
@@ -1640,6 +1659,9 @@
 
       /* Cabeçalho compacto */
       .app-header {
+        position: sticky;
+        top: 0;
+        z-index: 90;
         padding: calc(11px + env(safe-area-inset-top))
           var(--mobile-gutter) 11px;
         box-shadow: 0 2px 12px rgba(25, 31, 40, .13);
@@ -1667,9 +1689,43 @@
         border-radius: 10px;
       }
 
-      /* A aba externa é redundante no celular */
+      /* Alternância entre a visão comercial e a área do gestor */
       .tabs-wrap {
-        display: none;
+        position: sticky;
+        top: calc(66px + env(safe-area-inset-top));
+        z-index: 75;
+        display: block;
+        padding: 7px var(--mobile-gutter);
+        border-bottom: 1px solid rgba(217, 221, 227, .9);
+        background: rgba(255, 255, 255, .96);
+        box-shadow: 0 4px 14px rgba(25, 31, 40, .07);
+        backdrop-filter: blur(14px);
+      }
+
+      .tabs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        width: 100%;
+        max-width: none;
+        gap: 6px;
+        padding: 3px;
+        border-radius: 12px;
+        background: #edf0f4;
+      }
+
+      .tab-btn {
+        min-height: 42px;
+        padding: 8px 10px;
+        border: 0;
+        border-radius: 9px;
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .tab-btn.active {
+        background: #fff;
+        color: var(--brand-dark);
+        box-shadow: 0 2px 8px rgba(25, 31, 40, .11);
       }
 
       main {
@@ -1681,7 +1737,8 @@
       .card {
         margin-bottom: 12px;
         border-radius: var(--mobile-radius);
-        box-shadow: 0 3px 15px rgba(25, 31, 40, .07);
+        border-color: #dfe3e9;
+        box-shadow: 0 4px 18px rgba(25, 31, 40, .065);
       }
 
       .card-head {
@@ -1713,6 +1770,36 @@
         line-height: 1.4;
       }
 
+      #commercialPanel > .card > .card-head {
+        min-height: 42px;
+        padding: 9px 13px;
+        background: #fafbfc;
+      }
+
+      #commercialPanel > .card > .card-head h2,
+      #commercialPanel > .card > .card-head .hint {
+        display: none;
+      }
+
+      #commercialSaveHint {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        color: #3f6650;
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      #commercialSaveHint::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        flex: none;
+        border-radius: 50%;
+        background: #4e9a45;
+        box-shadow: 0 0 0 3px rgba(78, 154, 69, .13);
+      }
+
       /* Navegação principal fixa e alcançável pelo polegar */
       .commercial-subtabs {
         position: fixed;
@@ -1722,9 +1809,9 @@
         z-index: 80;
         display: flex;
         flex-wrap: nowrap;
-        gap: 7px;
+        gap: 5px;
         width: 100%;
-        padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+        padding: 7px 7px calc(7px + env(safe-area-inset-bottom));
         overflow-x: auto;
         overscroll-behavior-x: contain;
         scrollbar-width: none;
@@ -1742,15 +1829,48 @@
 
       .commercial-subtab {
         flex: 0 0 auto;
-        min-width: 118px;
-        min-height: 50px;
-        padding: 9px 12px;
-        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        align-content: center;
+        gap: 2px;
+        min-width: 92px;
+        min-height: 58px;
+        padding: 6px 8px;
+        border-radius: 11px;
         scroll-snap-align: center;
-        font-size: 12px;
+        font-size: 10px;
+        font-weight: 800;
         line-height: 1.18;
         white-space: normal;
       }
+
+      .commercial-subtab::before {
+        display: block;
+        color: currentColor;
+        font-size: 19px;
+        font-weight: 700;
+        line-height: 1;
+      }
+
+      .commercial-subtab::after {
+        content: attr(data-mobile-label);
+        display: block;
+        font-size: 10px;
+        line-height: 1.15;
+      }
+
+      .commercial-subtab {
+        font-size: 0;
+      }
+
+      .commercial-subtab:nth-child(1)::before { content: "◉"; }
+      .commercial-subtab:nth-child(2)::before { content: "▦"; }
+      .commercial-subtab:nth-child(3)::before { content: "★"; }
+      .commercial-subtab:nth-child(4)::before { content: "✎"; }
+      .commercial-subtab:nth-child(5)::before { content: "✓"; }
+      .commercial-subtab:nth-child(6)::before { content: "↗"; }
+      .commercial-subtab:nth-child(7)::before { content: "⚙"; }
+      .commercial-subtab:nth-child(8)::before { content: "%"; }
 
       .commercial-subtab.active {
         box-shadow: 0 4px 12px rgba(181, 31, 46, .24);
@@ -1760,6 +1880,8 @@
       .filter-panel {
         gap: 12px;
         padding: 12px;
+        border-bottom: 1px solid #e2e6eb;
+        background: linear-gradient(180deg, #fafbfc, #f5f7f9);
       }
 
       .filter-row {
@@ -1769,7 +1891,9 @@
 
       .filter-label {
         padding: 0 2px;
-        font-size: 11px;
+        color: #414953;
+        font-size: 10px;
+        letter-spacing: .075em;
       }
 
       .filter-chips {
@@ -1794,6 +1918,15 @@
         padding: 9px 13px;
         border-radius: 999px;
         font-size: 13px;
+        background: #fff;
+        box-shadow: 0 1px 3px rgba(25, 31, 40, .045);
+      }
+
+      .filter-chip.selected {
+        border-color: var(--brand);
+        background: #fff1f3;
+        color: var(--brand-dark);
+        box-shadow: 0 0 0 2px rgba(181, 31, 46, .09);
       }
 
       /* Barras de ação */
@@ -1816,6 +1949,22 @@
         line-height: 1.2;
       }
 
+      #commercialPdfBtn,
+      #commercialPriorityPdfBtn,
+      #scorePdfBtn,
+      #actionPlanPdfBtn,
+      #treatmentPdfBtn {
+        border-color: var(--brand-dark);
+        background: linear-gradient(135deg, var(--brand-dark), var(--brand));
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(181, 31, 46, .2);
+      }
+
+      .commercial-priority-header > .btn {
+        width: 100%;
+        min-height: 48px;
+      }
+
       .commercial-toolbar-actions .pdf-score-option { grid-column: 1 / -1; min-height: 46px; justify-content: center; }
 
       .field-row,
@@ -1832,6 +1981,16 @@
       .commercial-input-header {
         grid-template-columns: 1fr;
         gap: 10px;
+        position: sticky;
+        top: calc(128px + env(safe-area-inset-top));
+        z-index: 42;
+        margin: 0 -4px 12px;
+        padding: 10px;
+        border: 1px solid #dfe3e9;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, .97);
+        box-shadow: 0 5px 16px rgba(25, 31, 40, .09);
+        backdrop-filter: blur(12px);
       }
 
       .commercial-selected-manager {
@@ -1946,11 +2105,11 @@
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 0;
-        padding: 9px;
+        padding: 10px;
         border: 1px solid var(--line);
         border-radius: 13px;
         background: #fff;
-        box-shadow: 0 2px 7px rgba(25, 31, 40, .045);
+        box-shadow: 0 3px 12px rgba(25, 31, 40, .055);
       }
 
       table.mobile-card-table tbody td {
@@ -1965,7 +2124,7 @@
         content: attr(data-label);
         display: block;
         margin-bottom: 4px;
-        color: var(--muted);
+        color: #69727e;
         font-size: 10px;
         font-weight: 800;
         letter-spacing: .045em;
@@ -2008,11 +2167,12 @@
       }
 
       /* Visão consolidada */
-      .commercial-table tbody tr {
+      #commercialDashboardView .commercial-table tbody tr {
         padding-top: 49px;
+        border-left: 4px solid var(--brand);
       }
 
-      .commercial-table tbody td:nth-child(1) {
+      #commercialDashboardView .commercial-table tbody td:nth-child(1) {
         position: absolute;
         top: 9px;
         right: 9px;
@@ -2020,11 +2180,11 @@
         padding: 0;
       }
 
-      .commercial-table tbody td:nth-child(1)::before {
+      #commercialDashboardView .commercial-table tbody td:nth-child(1)::before {
         display: none;
       }
 
-      .commercial-table tbody td:nth-child(2) {
+      #commercialDashboardView .commercial-table tbody td:nth-child(2) {
         position: absolute;
         top: 15px;
         left: 13px;
@@ -2035,47 +2195,75 @@
         font-weight: 800;
       }
 
-      .commercial-table tbody td:nth-child(2)::before {
+      #commercialDashboardView .commercial-table tbody td:nth-child(2)::before {
         display: none;
       }
 
-      .commercial-table tbody td:nth-child(3),
-      .commercial-table tbody td:nth-child(4),
-      .commercial-table tbody td:nth-child(5) {
+      #commercialDashboardView .commercial-table tbody td:nth-child(3),
+      #commercialDashboardView .commercial-table tbody td:nth-child(4),
+      #commercialDashboardView .commercial-table tbody td:nth-child(5) {
         grid-column: 1 / -1;
       }
 
-      .commercial-table tbody td:nth-child(3) {
+      #commercialDashboardView .commercial-table tbody td:nth-child(3) {
         padding-right: 48px;
-        font-size: 17px;
+        color: #20242a;
+        font-size: 18px;
+        font-weight: 900;
+      }
+
+      #commercialDashboardView .commercial-table tbody td:nth-child(6),
+      #commercialDashboardView .commercial-table tbody td:nth-child(7),
+      #commercialDashboardView .commercial-table tbody td:nth-child(8),
+      #commercialDashboardView .commercial-table tbody td:nth-child(9),
+      #commercialDashboardView .commercial-table tbody td:nth-child(10) {
+        margin: 2px;
+        padding: 10px;
+        border-radius: 10px !important;
+        background: #f5f7f9;
+        font-size: 16px;
         font-weight: 800;
       }
 
-      .commercial-table tbody .detail-row td:nth-child(3) {
+      #commercialDashboardView .commercial-table tbody td:nth-child(9) {
+        background: #fff6db;
+        color: #6b4d00;
+      }
+
+      #commercialDashboardView .commercial-table tbody td:nth-child(10) {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        background: #edf3ff;
+        color: #254b8f;
+        text-align: left;
+      }
+
+      #commercialDashboardView .commercial-table tbody .detail-row td:nth-child(3) {
         display: none;
       }
 
-      .commercial-table tbody .detail-row {
+      #commercialDashboardView .commercial-table tbody .detail-row {
         margin-left: 12px;
-        border-left: 4px solid #d8dde4;
+        border-left: 4px solid #aeb7c3;
         background: #fafbfc;
       }
 
-      .commercial-table .expand-btn {
+      #commercialDashboardView .commercial-table .expand-btn {
         width: 42px;
         height: 42px;
         border-radius: 10px;
         font-size: 21px;
       }
 
-      .commercial-table .pct-cell {
+      #commercialDashboardView .commercial-table .pct-cell {
         font-size: 18px;
       }
 
       /* Prioritários */
-      .commercial-priority-table tbody td:nth-child(2),
-      .commercial-priority-table tbody td:nth-child(3),
-      .commercial-priority-table tbody td:nth-child(10) {
+      #commercialPriorityView .commercial-priority-table tbody td:nth-child(2),
+      #commercialPriorityView .commercial-priority-table tbody td:nth-child(3),
+      #commercialPriorityView .commercial-priority-table tbody td:nth-child(10) {
         grid-column: 1 / -1;
       }
 
@@ -2102,7 +2290,33 @@
       .action-plan-grid .wide { grid-column: auto; }
       .action-plan-card { grid-template-columns: 40px minmax(0, 1fr); }
 
-      .commercial-priority-table tbody td:nth-child(1) {
+      .action-plan-context {
+        gap: 9px;
+        padding: 11px;
+        border: 1px solid #dfe3e9;
+        border-radius: 12px;
+        background: #f7f8fa;
+      }
+
+      .action-plan-card {
+        border-radius: 13px;
+        box-shadow: 0 3px 12px rgba(25, 31, 40, .06);
+      }
+
+      .action-plan-card-head {
+        min-height: 56px;
+      }
+
+      .action-plan-summary {
+        font-size: 15px;
+        font-weight: 850;
+      }
+
+      .action-plan-field textarea {
+        min-height: 120px;
+      }
+
+      #commercialPriorityView .commercial-priority-table tbody td:nth-child(1) {
         position: absolute;
         top: 9px;
         right: 9px;
@@ -2110,22 +2324,40 @@
         padding: 0;
       }
 
-      .commercial-priority-table tbody td:nth-child(1)::before { display: none; }
+      #commercialPriorityView .commercial-priority-table tbody td:nth-child(1)::before { display: none; }
 
-      .commercial-priority-table tbody tr { padding-top: 49px; }
+      #commercialPriorityView .commercial-priority-table tbody tr { padding-top: 49px; }
 
-      .commercial-priority-table tbody td:nth-child(2) {
+      #commercialPriorityView .commercial-priority-table tbody td:nth-child(2) {
         font-size: 16px;
         font-weight: 800;
       }
 
-      .commercial-priority-table .status {
+      #commercialPriorityView .commercial-priority-table .status {
         display: block;
         width: 100%;
         padding: 9px 10px;
         text-align: center;
         white-space: normal;
         line-height: 1.25;
+      }
+
+      #commercialPriorityView .commercial-priority-table tbody tr {
+        border-left: 4px solid #9b6b22;
+      }
+
+      #commercialPriorityView .commercial-priority-table tbody td:nth-child(4),
+      #commercialPriorityView .commercial-priority-table tbody td:nth-child(5),
+      #commercialPriorityView .commercial-priority-table tbody td:nth-child(6),
+      #commercialPriorityView .commercial-priority-table tbody td:nth-child(7),
+      #commercialPriorityView .commercial-priority-table tbody td:nth-child(8),
+      #commercialPriorityView .commercial-priority-table tbody td:nth-child(9) {
+        margin: 2px;
+        padding: 9px;
+        border-radius: 9px !important;
+        background: #f6f7f9;
+        font-size: 15px;
+        font-weight: 700;
       }
 
       /* F-LOG */
@@ -2186,6 +2418,14 @@
         text-align: right;
         font-size: 17px;
         font-variant-numeric: tabular-nums;
+        border: 2px solid #d4d9e0;
+        background: #fffdf0;
+      }
+
+      .commercial-input-table input:focus {
+        border-color: var(--brand);
+        background: #fff;
+        box-shadow: 0 0 0 4px rgba(181, 31, 46, .11);
       }
 
       .commercial-input-table .entry-pct {
@@ -2194,6 +2434,120 @@
         background: #f3f5f7;
         text-align: center;
         font-size: 18px;
+        font-weight: 900;
+      }
+
+      /* Tratativas: resumo e atualização em cartões operacionais */
+      .treatment-header {
+        gap: 10px;
+      }
+
+      .treatment-header h3 {
+        font-size: 22px;
+      }
+
+      .treatment-filters {
+        gap: 10px;
+        padding: 11px;
+        border-radius: 12px;
+        background: #f7f8fa;
+      }
+
+      #commercialTreatmentsView .treatment-kpis {
+        gap: 8px;
+      }
+
+      #commercialTreatmentsView .treatment-kpi {
+        min-height: 92px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 12px;
+        border-radius: 12px;
+        background: linear-gradient(145deg, #fff, #f4f6f8);
+        box-shadow: 0 2px 8px rgba(25, 31, 40, .05);
+      }
+
+      #commercialTreatmentsView .treatment-kpi strong {
+        font-size: 24px;
+        line-height: 1;
+      }
+
+      #commercialTreatmentsView .treatment-table tbody tr {
+        border-left: 4px solid #3158a6;
+      }
+
+      #commercialTreatmentsView .treatment-table tbody td:nth-child(1),
+      #commercialTreatmentsView .treatment-table tbody td:nth-child(2),
+      #commercialTreatmentsView .treatment-table tbody td:nth-child(11),
+      #commercialTreatmentsView .treatment-table tbody td:nth-child(12),
+      #commercialTreatmentsView .treatment-table tbody td:nth-child(13) {
+        grid-column: 1 / -1;
+      }
+
+      #commercialTreatmentsView .treatment-table tbody td:nth-child(1) {
+        padding-bottom: 4px;
+        color: #20242a;
+        font-size: 18px;
+        font-weight: 900;
+      }
+
+      #commercialTreatmentsView .treatment-table tbody td:nth-child(2) {
+        padding-top: 4px;
+        color: #4f5965;
+        font-weight: 750;
+      }
+
+      #commercialTreatmentsView .treatment-table tbody td:nth-child(3),
+      #commercialTreatmentsView .treatment-table tbody td:nth-child(4),
+      #commercialTreatmentsView .treatment-table tbody td:nth-child(7),
+      #commercialTreatmentsView .treatment-table tbody td:nth-child(8),
+      #commercialTreatmentsView .treatment-table tbody td:nth-child(9),
+      #commercialTreatmentsView .treatment-table tbody td:nth-child(10) {
+        margin: 2px;
+        padding: 9px;
+        border-radius: 9px !important;
+        background: #f5f7f9;
+        font-size: 16px;
+        font-weight: 800;
+      }
+
+      #commercialTreatmentsView .treatment-table .treatment-progress {
+        min-width: 0;
+        width: 100%;
+        padding: 5px 0;
+      }
+
+      #commercialTreatmentsView .treatment-table .treatment-progress-track {
+        height: 12px;
+      }
+
+      #commercialTreatmentsView .treatment-table .treatment-progress-label {
+        margin-top: 7px;
+        font-size: 15px;
+      }
+
+      #commercialTreatmentsView .treatment-table .treatment-status {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+        padding: 10px 12px;
+        font-size: 13px;
+      }
+
+      #commercialTreatmentsView .treatment-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        min-width: 0;
+        width: 100%;
+      }
+
+      #commercialTreatmentsView .treatment-actions .btn {
+        min-height: 46px;
+      }
+
+      #commercialTreatmentsView .treatment-actions .delete-treatment {
+        grid-column: 1 / -1;
       }
 
       /* Cadastros */
@@ -2282,6 +2636,96 @@
         height: 46px;
       }
 
+      /* Área do Gestor no celular */
+      .manager-hero {
+        margin-bottom: 12px;
+        padding: 17px;
+        border-radius: 14px;
+        box-shadow: 0 6px 18px rgba(111, 16, 30, .2);
+      }
+
+      .manager-hero h2 {
+        font-size: 24px;
+      }
+
+      .manager-progress {
+        width: 100%;
+        min-width: 0;
+        margin-top: 8px;
+      }
+
+      .manager-toolbar {
+        top: calc(128px + env(safe-area-inset-top));
+        z-index: 44;
+        gap: 10px;
+        padding: 10px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, .97);
+        backdrop-filter: blur(12px);
+      }
+
+      .manager-filters {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .manager-filter {
+        min-height: 44px;
+        padding: 8px 5px;
+        font-size: 12px;
+      }
+
+      .manager-date {
+        width: 100%;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+      }
+
+      .manager-date input {
+        width: 100%;
+      }
+
+      .manager-summary-grid {
+        gap: 8px;
+      }
+
+      .manager-summary {
+        min-height: 92px;
+        padding: 12px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(25, 31, 40, .05);
+      }
+
+      .manager-summary strong {
+        font-size: 24px;
+      }
+
+      .manager-task {
+        padding: 13px;
+        border-radius: 13px;
+      }
+
+      .manager-task-title input {
+        width: 25px;
+        height: 25px;
+      }
+
+      .manager-card-actions,
+      .manager-card-actions select,
+      .manager-task-actions,
+      .manager-task-actions .btn {
+        width: 100%;
+      }
+
+      .manager-task-actions .btn {
+        min-height: 46px;
+      }
+
+      .manager-task-details textarea {
+        min-height: 120px;
+      }
+
       /* Modal como bottom sheet */
       .modal-backdrop {
         align-items: end;
@@ -2289,9 +2733,25 @@
       }
 
       .modal-dialog {
+        position: relative;
         width: 100%;
         max-height: min(88dvh, 760px);
         border-radius: 20px 20px 0 0;
+        box-shadow: 0 -14px 40px rgba(25, 31, 40, .22);
+        animation: mobile-sheet-in .2s ease-out;
+      }
+
+      .modal-dialog::before {
+        content: "";
+        position: sticky;
+        top: 7px;
+        z-index: 2;
+        display: block;
+        width: 42px;
+        height: 4px;
+        margin: 7px auto -4px;
+        border-radius: 99px;
+        background: #c7ccd3;
       }
 
       .modal-head {
@@ -2349,9 +2809,14 @@
         padding: 12px 14px;
         text-align: center;
       }
+
+      @keyframes mobile-sheet-in {
+        from { transform: translateY(22px); opacity: .7; }
+        to { transform: translateY(0); opacity: 1; }
+      }
     }
 
-    @media (max-width: 390px) {
+    @media (max-width: 350px) {
       .commercial-toolbar-actions {
         grid-template-columns: 1fr;
       }
@@ -2361,25 +2826,25 @@
       }
 
       table.mobile-card-table tbody td,
-      #scoreTable tbody td:first-child,
-      .commercial-table tbody td:nth-child(3),
-      .commercial-table tbody td:nth-child(4),
-      .commercial-table tbody td:nth-child(5),
-      .commercial-priority-table tbody td,
-      .commercial-input-table tbody td,
+      #commercialScoreView #scoreTable tbody td:first-child,
+      #commercialDashboardView .commercial-table tbody td:nth-child(3),
+      #commercialDashboardView .commercial-table tbody td:nth-child(4),
+      #commercialDashboardView .commercial-table tbody td:nth-child(5),
+      #commercialPriorityView .commercial-priority-table tbody td,
+      #commercialInputView .commercial-input-table tbody td,
       #commercialProductsTable tbody td,
       #commercialSegmentsTable tbody td,
       #commercialManagersTable tbody td,
-      #refTable tbody td {
+      #commercialReferencesView #refTable tbody td {
         grid-column: 1 / -1;
       }
 
-      .commercial-table tbody tr {
+      #commercialDashboardView .commercial-table tbody tr {
         padding-top: 49px;
       }
 
-      .commercial-table tbody td:nth-child(1),
-      .commercial-table tbody td:nth-child(2) {
+      #commercialDashboardView .commercial-table tbody td:nth-child(1),
+      #commercialDashboardView .commercial-table tbody td:nth-child(2) {
         grid-column: auto;
       }
     }
@@ -2460,14 +2925,14 @@
         </div>
 
         <div class="commercial-subtabs no-print">
-          <button class="commercial-subtab active" data-commercial-view="commercialScoreView">Pontuação POBJ Produção</button>
-          <button class="commercial-subtab" data-commercial-view="commercialDashboardView">Visão consolidada</button>
-          <button class="commercial-subtab" data-commercial-view="commercialPriorityView">Prioritários</button>
-          <button class="commercial-subtab" data-commercial-view="commercialInputView">F-LOG</button>
-          <button class="commercial-subtab" data-commercial-view="commercialActionPlanView">Plano de Ação</button>
-          <button class="commercial-subtab" data-commercial-view="commercialTreatmentsView">Tratativas</button>
-          <button class="commercial-subtab" data-commercial-view="commercialConfigView">Cadastros</button>
-          <button class="commercial-subtab" data-commercial-view="commercialReferencesView">Referências</button>
+          <button class="commercial-subtab active" data-mobile-label="Pontuação" data-commercial-view="commercialScoreView">Pontuação POBJ Produção</button>
+          <button class="commercial-subtab" data-mobile-label="Consolidado" data-commercial-view="commercialDashboardView">Visão consolidada</button>
+          <button class="commercial-subtab" data-mobile-label="Prioritários" data-commercial-view="commercialPriorityView">Prioritários</button>
+          <button class="commercial-subtab" data-mobile-label="F-LOG" data-commercial-view="commercialInputView">F-LOG</button>
+          <button class="commercial-subtab" data-mobile-label="Ações" data-commercial-view="commercialActionPlanView">Plano de Ação</button>
+          <button class="commercial-subtab" data-mobile-label="Tratativas" data-commercial-view="commercialTreatmentsView">Tratativas</button>
+          <button class="commercial-subtab" data-mobile-label="Cadastros" data-commercial-view="commercialConfigView">Cadastros</button>
+          <button class="commercial-subtab" data-mobile-label="Referências" data-commercial-view="commercialReferencesView">Referências</button>
         </div>
 
         <div id="commercialScoreView" class="commercial-view active">
@@ -6116,6 +6581,27 @@
       }
 
       function enhanceAccessibility() {
+        const mainTabList = document.querySelector('.tabs');
+        if (mainTabList) {
+          setAttr(mainTabList, 'role', 'tablist');
+          setAttr(mainTabList, 'aria-label', 'Áreas principais');
+          mainTabList.querySelectorAll('.tab-btn').forEach((tab, index) => {
+            const panelId = tab.dataset.tab;
+            const panel = panelId ? document.getElementById(panelId) : null;
+            const active = tab.classList.contains('active');
+            const tabId = tab.id || `mainTab-${index}`;
+            if (!tab.id) tab.id = tabId;
+            setAttr(tab, 'role', 'tab');
+            setAttr(tab, 'aria-selected', active);
+            setAttr(tab, 'tabindex', active ? '0' : '-1');
+            if (panelId) setAttr(tab, 'aria-controls', panelId);
+            if (panel) {
+              setAttr(panel, 'role', 'tabpanel');
+              setAttr(panel, 'aria-labelledby', tabId);
+            }
+          });
+        }
+
         const tabList = document.querySelector('.commercial-subtabs');
         if (tabList) {
           setAttr(tabList, 'role', 'tablist');
@@ -6186,13 +6672,13 @@
         scheduled = false;
 
         document.querySelectorAll([
-          '#scoreTable',
-          '.commercial-table',
-          '.commercial-priority-table',
-          '.commercial-input-table',
-          '.treatment-table',
-          '.config-table',
-          '#refTable'
+          '#commercialScoreView #scoreTable',
+          '#commercialDashboardView .commercial-table',
+          '#commercialPriorityView .commercial-priority-table',
+          '#commercialInputView .commercial-input-table',
+          '#commercialTreatmentsView .treatment-table',
+          '#commercialConfigView .config-table',
+          '#commercialReferencesView #refTable'
         ].join(',')).forEach(enhanceTable);
 
         enhanceAccessibility();
@@ -6230,8 +6716,12 @@
       }
 
       document.addEventListener('click', event => {
+        const mobileSubtab = event.target.closest('.commercial-subtab');
+        if (mobileSubtab && media.matches) {
+          setTimeout(() => mobileSubtab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }), 0);
+        }
         if (event.target.closest(
-          '.commercial-subtab, .filter-chip, .expand-btn, .commercial-toolbar-actions button, .inline-create button, .icon-btn, .f-log-visibility-btn, #commercialPdfBtn'
+          '.tab-btn, .commercial-subtab, .filter-chip, .expand-btn, .commercial-toolbar-actions button, .inline-create button, .icon-btn, .f-log-visibility-btn, #commercialPdfBtn'
         )) {
           setTimeout(scheduleEnhance, 0);
         }
@@ -6246,10 +6736,11 @@
       }, { passive: true });
 
       document.addEventListener('keydown', event => {
-        const current = event.target.closest?.('.commercial-subtab');
+        const current = event.target.closest?.('.commercial-subtab, .tab-btn');
         if (!current) return;
 
-        const tabs = Array.from(document.querySelectorAll('.commercial-subtab'));
+        const selector = current.classList.contains('tab-btn') ? '.tab-btn' : '.commercial-subtab';
+        const tabs = Array.from(document.querySelectorAll(selector));
         const index = tabs.indexOf(current);
         if (index < 0) return;
 
