@@ -4095,10 +4095,11 @@
       return a === b;
     }
 
-    function validatedPrototypeImportValue(value) {
+    function validatedPrototypeImportValue(value, { allowNegative = false } = {}) {
       if (value === null || value === undefined || value === '') return null;
       const number = Number(value);
-      if (!Number.isFinite(number) || number < 0 || number > FLOG_IMPORT_MAX_VALUE) {
+      const belowMinimum = allowNegative ? number < -FLOG_IMPORT_MAX_VALUE : number < 0;
+      if (!Number.isFinite(number) || belowMinimum || number > FLOG_IMPORT_MAX_VALUE) {
         throw new Error('A importação contém um valor inválido ou fora do limite permitido.');
       }
       return number;
@@ -4119,7 +4120,7 @@
         return {
           productId,
           objective: validatedPrototypeImportValue(item?.objective),
-          realized: validatedPrototypeImportValue(item?.realized)
+          realized: validatedPrototypeImportValue(item?.realized, { allowNegative: true })
         };
       });
     }

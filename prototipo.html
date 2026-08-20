@@ -280,7 +280,7 @@
         <div class="head-title"><span class="step">3</span><div><h2 id="mappingTitle">Relacione os indicadores</h2><p>Exemplo: “Capital de Giro” na fonte pode corresponder a “Crédito PJ” no aplicativo.</p></div></div>
       </div>
       <div class="card-body">
-        <div class="mapping-toolbar"><div class="summary-note" id="mappingSummary">Leia pelo menos uma fonte para montar as correspondências.</div></div>
+        <div class="mapping-toolbar"><div class="summary-note" id="mappingSummary">Leia pelo menos uma fonte para montar as correspondências.</div><div class="summary-note">Realizados negativos são mantidos como estornos.</div></div>
         <div class="table-scroll">
           <table class="mapping-table">
             <thead><tr><th>Nome encontrado</th><th>Origem</th><th>Sugestão</th><th>Produto correspondente</th></tr></thead>
@@ -565,10 +565,10 @@
       }).filter(item => item.id && item.name);
     }
 
-    function catalogNumberOrBlank(value) {
+    function catalogNumberOrBlank(value, { allowNegative = false } = {}) {
       if (value === '' || value === null || value === undefined) return '';
       const number = Number(value);
-      return Number.isFinite(number) && number >= 0 ? number : '';
+      return Number.isFinite(number) && (allowNegative || number >= 0) ? number : '';
     }
 
     function sanitizeCatalogEntries(items) {
@@ -577,7 +577,7 @@
         managerId: String(item?.managerId || '').slice(0, 250),
         productId: String(item?.productId || '').slice(0, 250),
         objective: catalogNumberOrBlank(item?.objective),
-        realized: catalogNumberOrBlank(item?.realized),
+        realized: catalogNumberOrBlank(item?.realized, { allowNegative: true }),
         hidden: Boolean(item?.hidden)
       })).filter(item => item.managerId && item.productId);
     }
