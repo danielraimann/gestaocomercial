@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="prototype-version" content="1">
+  <meta name="prototype-version" content="2">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
-  <title>Protótipo de importação F-LOG</title>
+  <title>Importação assistida do F-LOG</title>
   <style>
     :root {
       color-scheme: light;
@@ -138,11 +138,20 @@
     .result-table { min-width: 1040px; }
     .result-table .num { text-align: right; font-variant-numeric: tabular-nums; }
     .result-table .chosen { color: var(--brand-dark); background: #fff7f7; font-weight: 900; }
+    .result-table .changed { box-shadow: inset 4px 0 0 var(--brand); }
+    .current-value { display: block; margin-top: 3px; color: var(--muted); font-size: 9px; font-weight: 700; }
     .origin { min-width: 180px; color: #4e5863; font-size: 10px; line-height: 1.35; }
     .duplicate-warning { display: block; margin-top: 3px; color: var(--warning); font-size: 9px; font-weight: 900; }
     .result-status { min-height: 20px; margin: 10px 0 0; color: var(--muted); font-size: 12px; }
     .result-status.error { color: var(--brand-dark); font-weight: 850; }
     .result-status.ok { color: var(--safe); font-weight: 850; }
+    .apply-panel { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 14px; padding: 14px; border: 1px solid #b9dec9; border-radius: 11px; background: var(--safe-soft); }
+    .apply-copy { min-width: 0; }
+    .apply-copy strong { display: block; color: #135b39; font-size: 13px; }
+    .apply-copy span { display: block; margin-top: 3px; color: #38614e; font-size: 11px; line-height: 1.4; }
+    .apply-actions { display: flex; flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+    .btn.undo { color: #6a4800; border-color: #e1bd61; background: #fff8df; }
+    .history-status { min-height: 18px; margin: 9px 0 0; color: var(--muted); font-size: 11px; }
 
     @media (max-width: 880px) {
       .shell { padding: 10px 9px 30px; }
@@ -154,6 +163,9 @@
       .card-head, .card-body { padding: 15px 13px; }
       .context-grid, .source-grid { grid-template-columns: 1fr; }
       .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .apply-panel { align-items: stretch; flex-direction: column; }
+      .apply-actions { justify-content: stretch; }
+      .apply-actions .btn { flex: 1 1 180px; }
     }
 
     @media (max-width: 620px) {
@@ -183,16 +195,16 @@
   <main class="shell">
     <header class="hero">
       <div>
-        <span class="badge">AMBIENTE DE PROTÓTIPO</span>
+        <span class="badge">IMPORTAÇÃO ASSISTIDA</span>
         <h1>Importação assistida do F-LOG</h1>
-        <p>Cole duas fontes, reconheça a estrutura, relacione as nomenclaturas e confira qual seria o resultado antes de qualquer futura integração.</p>
+        <p>Cole duas fontes, reconheça a estrutura, relacione as nomenclaturas e confira o resultado antes de aplicá-lo ao F-LOG.</p>
       </div>
       <div class="memory-pill">Sessão temporária<br>Atualizar a página limpa tudo</div>
     </header>
 
     <div class="safety" role="note">
       <div class="safety-icon">!</div>
-      <div><strong>Nada feito aqui altera o sistema atual.</strong><span>Este laboratório não grava no banco de dados, não atualiza o F-LOG e não conserva os dados colados. O resultado é apenas uma simulação local.</span></div>
+      <div><strong>A simulação continua sem alterar o sistema.</strong><span>Os dados colados permanecem somente nesta página. O F-LOG só é atualizado depois de gerar a simulação, revisar as alterações e confirmar a aplicação; cada aplicação pode ser desfeita.</span></div>
     </div>
 
     <section class="card" aria-labelledby="contextTitle">
@@ -287,7 +299,7 @@
           <div class="button-row" style="margin:0"><button type="button" class="btn dark" id="exportCsvBtn" disabled>Exportar CSV</button><button type="button" class="btn dark" id="exportJsonBtn" disabled>Exportar JSON</button></div>
         </div>
         <div class="kpis" id="simulationKpis">
-          <div class="kpi"><span>Linhas lidas</span><strong>0</strong></div><div class="kpi"><span>Mapeadas</span><strong>0</strong></div><div class="kpi"><span>Divergências</span><strong>0</strong></div><div class="kpi"><span>Produtos simulados</span><strong>0</strong></div>
+          <div class="kpi"><span>Linhas lidas</span><strong>0</strong></div><div class="kpi"><span>Mapeadas</span><strong>0</strong></div><div class="kpi"><span>Divergências</span><strong>0</strong></div><div class="kpi"><span>Alterações</span><strong>0</strong></div>
         </div>
         <div class="table-scroll">
           <table class="result-table">
@@ -296,6 +308,11 @@
           </table>
         </div>
         <p class="result-status" id="resultStatus" aria-live="polite"></p>
+        <div class="apply-panel">
+          <div class="apply-copy"><strong>Aplicação protegida no F-LOG</strong><span id="applySummary">Gere uma simulação para comparar os valores atuais com os novos.</span></div>
+          <div class="apply-actions"><button type="button" class="btn undo" id="undoImportBtn" disabled>Desfazer última importação</button><button type="button" class="btn safe" id="applyImportBtn" disabled>Aplicar no F-LOG</button></div>
+        </div>
+        <p class="history-status" id="historyStatus" aria-live="polite"></p>
       </div>
     </section>
   </main>
@@ -522,10 +539,12 @@
     }
 
     const model = {
-      catalog: { products: [], managers: [], segments: [] },
+      catalog: { products: [], managers: [], segments: [], entries: [], writeEnabled: false, lastReversibleImport: null },
       sources: { official: emptySource(), unofficial: emptySource() },
       mappings: Object.create(null),
-      simulation: []
+      simulation: [],
+      sessionToken: '',
+      requestPending: false
     };
 
     function localIsoDate() {
@@ -544,6 +563,34 @@
       }).filter(item => item.id && item.name);
     }
 
+    function catalogNumberOrBlank(value) {
+      if (value === '' || value === null || value === undefined) return '';
+      const number = Number(value);
+      return Number.isFinite(number) && number >= 0 ? number : '';
+    }
+
+    function sanitizeCatalogEntries(items) {
+      if (!Array.isArray(items)) return [];
+      return items.slice(0, 10000).map(item => ({
+        managerId: String(item?.managerId || '').slice(0, 250),
+        productId: String(item?.productId || '').slice(0, 250),
+        objective: catalogNumberOrBlank(item?.objective),
+        realized: catalogNumberOrBlank(item?.realized),
+        hidden: Boolean(item?.hidden)
+      })).filter(item => item.managerId && item.productId);
+    }
+
+    function sanitizeLastImport(value) {
+      if (!value || typeof value !== 'object' || !value.id) return null;
+      return {
+        id: String(value.id).slice(0, 250),
+        managerName: String(value.managerName || '').slice(0, 250),
+        referenceDate: String(value.referenceDate || '').slice(0, 10),
+        createdAt: String(value.createdAt || '').slice(0, 40),
+        changeCount: Math.max(0, Math.min(10000, Number(value.changeCount) || 0))
+      };
+    }
+
     function renderCatalog() {
       const current = dom('managerSelect').value;
       const segmentNames = new Map(model.catalog.segments.map(segment => [segment.id, segment.name]));
@@ -553,21 +600,37 @@
         return `<option value="${escapeHtml(manager.id)}">${escapeHtml(manager.name)}${segment ? ` — ${escapeHtml(segment)}` : ''}</option>`;
       }).join('');
       if (managers.some(manager => manager.id === current)) dom('managerSelect').value = current;
-      dom('catalogStatus').textContent = `${model.catalog.products.length} produto(s), ${managers.length} gerente(s) e ${model.catalog.segments.length} segmento(s) recebidos em modo somente leitura.`;
+      dom('catalogStatus').textContent = `${model.catalog.products.length} produto(s), ${managers.length} gerente(s) e ${model.catalog.segments.length} segmento(s) recebidos do sistema.`;
       dom('catalogStatus').className = 'catalog-status ready';
       renderMappings();
+      renderSimulation();
+      renderImportActions();
     }
 
     window.addEventListener('message', event => {
       if (event.source !== window.parent) return;
       const payload = event.data;
-      if (!payload || payload.type !== 'prototype-catalog' || payload.catalogVersion !== 1) return;
+      if (!payload || payload.type !== 'prototype-catalog' || payload.catalogVersion !== 2) return;
+      model.sessionToken = String(payload.sessionToken || '').slice(0, 250);
       model.catalog = {
         products: sanitizeCatalogItems(payload.products, ['id', 'name']),
         managers: sanitizeCatalogItems(payload.managers, ['id', 'name', 'segmentId']),
-        segments: sanitizeCatalogItems(payload.segments, ['id', 'name'])
+        segments: sanitizeCatalogItems(payload.segments, ['id', 'name']),
+        entries: sanitizeCatalogEntries(payload.entries),
+        writeEnabled: payload.writeEnabled === true,
+        lastReversibleImport: sanitizeLastImport(payload.lastReversibleImport)
       };
       renderCatalog();
+    });
+
+    window.addEventListener('message', event => {
+      if (event.source !== window.parent) return;
+      const payload = event.data;
+      if (!payload || payload.type !== 'prototype-import-result' || payload.catalogVersion !== 2) return;
+      if (!model.sessionToken || payload.sessionToken !== model.sessionToken) return;
+      model.requestPending = false;
+      setResultStatus(String(payload.message || ''), payload.ok ? 'ok' : 'error');
+      renderImportActions();
     });
 
     function selectOptions(source, allowNone) {
@@ -721,6 +784,51 @@
       return official > unofficial ? 'Oficial (maior)' : 'Extraoficial (maior)';
     }
 
+    function currentEntry(managerId, productId) {
+      return model.catalog.entries.find(item => item.managerId === managerId && item.productId === productId) || null;
+    }
+
+    function sameCommercialValue(first, second) {
+      const a = first === '' || first === null || first === undefined ? '' : Number(first);
+      const b = second === '' || second === null || second === undefined ? '' : Number(second);
+      return a === b;
+    }
+
+    function simulationChanges() {
+      const meta = simulationMeta();
+      if (!meta.managerId) return [];
+      return model.simulation.map(row => {
+        const current = currentEntry(meta.managerId, row.productId);
+        const currentObjective = current?.objective ?? '';
+        const currentRealized = current?.realized ?? '';
+        const hidden = Boolean(current?.hidden);
+        const objectiveChanged = !hidden && row.chosenObjective !== null && !sameCommercialValue(currentObjective, row.chosenObjective);
+        const realizedChanged = !hidden && row.chosenRealized !== null && !sameCommercialValue(currentRealized, row.chosenRealized);
+        return { row, currentObjective, currentRealized, hidden, objectiveChanged, realizedChanged };
+      }).filter(item => item.objectiveChanged || item.realizedChanged);
+    }
+
+    function renderImportActions() {
+      const changes = simulationChanges();
+      const applyButton = dom('applyImportBtn');
+      const undoButton = dom('undoImportBtn');
+      const history = model.catalog.lastReversibleImport;
+      const unavailable = !model.catalog.writeEnabled || !model.sessionToken;
+      applyButton.disabled = unavailable || model.requestPending || !changes.length;
+      applyButton.textContent = model.requestPending ? 'Processando…' : changes.length ? `Aplicar ${changes.length} produto(s)` : 'Aplicar no F-LOG';
+      undoButton.disabled = unavailable || model.requestPending || !history;
+      dom('applySummary').textContent = unavailable
+        ? 'A aplicação real está temporariamente indisponível; a simulação continua funcionando.'
+        : changes.length
+          ? `${changes.length} produto(s) possuem valores diferentes do F-LOG atual. Campos sem valor e produtos ocultos serão preservados.`
+          : model.simulation.length
+            ? 'A simulação já corresponde aos valores atuais do F-LOG.'
+            : 'Gere uma simulação para comparar os valores atuais com os novos.';
+      dom('historyStatus').textContent = history
+        ? `Última importação reversível: ${history.managerName || 'gerente'}${history.referenceDate ? ` em ${history.referenceDate.split('-').reverse().join('/')}` : ''} · ${history.changeCount} produto(s).`
+        : 'Ainda não há importação disponível para desfazer.';
+    }
+
     function simulationMeta() {
       const manager = model.catalog.managers.find(item => item.id === dom('managerSelect').value);
       const segment = manager && model.catalog.segments.find(item => item.id === manager.segmentId);
@@ -737,7 +845,7 @@
       if (unresolved.length) return setResultStatus(`Resolva ou ignore ${unresolved.length} nomenclatura(s) antes de simular.`, 'error');
       model.simulation = reconcileRows(model.sources.official.rows, model.sources.unofficial.rows, model.mappings, model.catalog.products);
       renderSimulation();
-      setResultStatus(`${model.simulation.length} produto(s) conciliado(s) para ${meta.managerName}. Nenhum dado foi gravado.`, 'ok');
+      setResultStatus(`${model.simulation.length} produto(s) conciliado(s) para ${meta.managerName}. Revise os valores atuais e novos antes de aplicar.`, 'ok');
     }
 
     function setResultStatus(message, type) {
@@ -753,21 +861,32 @@
         row.officialObjective !== null && row.unofficialObjective !== null && row.officialObjective !== row.unofficialObjective ||
         row.officialRealized !== null && row.unofficialRealized !== null && row.officialRealized !== row.unofficialRealized
       ).length;
+      const changes = simulationChanges();
       dom('simulationKpis').innerHTML = [
-        ['Linhas lidas', lineCount], ['Mapeadas', mapped], ['Divergências', divergences], ['Produtos simulados', model.simulation.length]
+        ['Linhas lidas', lineCount], ['Mapeadas', mapped], ['Divergências', divergences], ['Alterações', changes.length]
       ].map(([label, value]) => `<div class="kpi"><span>${label}</span><strong>${value}</strong></div>`).join('');
       dom('exportCsvBtn').disabled = !model.simulation.length;
       dom('exportJsonBtn').disabled = !model.simulation.length;
       if (!model.simulation.length) {
         dom('resultBody').innerHTML = '<tr><td colspan="8" class="empty">A simulação aparecerá aqui.</td></tr>';
+        renderImportActions();
         return;
       }
+      const meta = simulationMeta();
       dom('resultBody').innerHTML = model.simulation.map(row => {
+        const current = currentEntry(meta.managerId, row.productId);
+        const currentObjective = current?.objective ?? '';
+        const currentRealized = current?.realized ?? '';
+        const hidden = Boolean(current?.hidden);
+        const objectiveChanged = !hidden && row.chosenObjective !== null && !sameCommercialValue(currentObjective, row.chosenObjective);
+        const realizedChanged = !hidden && row.chosenRealized !== null && !sameCommercialValue(currentRealized, row.chosenRealized);
         const objectiveOrigin = valueOrigin(row.officialObjective, row.unofficialObjective);
         const realizedOrigin = valueOrigin(row.officialRealized, row.unofficialRealized);
         const duplicate = row.officialCount > 1 || row.unofficialCount > 1 ? `<span class="duplicate-warning">Maior valor preservado em linha repetida</span>` : '';
-        return `<tr><td data-label="Produto destino"><strong>${escapeHtml(row.productName)}</strong>${duplicate}</td><td data-label="Obj. oficial" class="num">${formatNumber(row.officialObjective)}</td><td data-label="Obj. extra" class="num">${formatNumber(row.unofficialObjective)}</td><td data-label="Objetivo escolhido" class="num chosen">${formatNumber(row.chosenObjective)}</td><td data-label="Real. oficial" class="num">${formatNumber(row.officialRealized)}</td><td data-label="Real. extra" class="num">${formatNumber(row.unofficialRealized)}</td><td data-label="Realizado escolhido" class="num chosen">${formatNumber(row.chosenRealized)}</td><td data-label="Origem" class="origin">Objetivo: ${objectiveOrigin}<br>Realizado: ${realizedOrigin}</td></tr>`;
+        const hiddenNote = hidden ? '<span class="duplicate-warning">Produto oculto para este gerente — não será importado</span>' : '';
+        return `<tr><td data-label="Produto destino"><strong>${escapeHtml(row.productName)}</strong>${duplicate}${hiddenNote}</td><td data-label="Obj. oficial" class="num">${formatNumber(row.officialObjective)}</td><td data-label="Obj. extra" class="num">${formatNumber(row.unofficialObjective)}</td><td data-label="Objetivo escolhido" class="num chosen ${objectiveChanged ? 'changed' : ''}">${formatNumber(row.chosenObjective)}<span class="current-value">Atual: ${formatNumber(currentObjective === '' ? null : currentObjective)}</span></td><td data-label="Real. oficial" class="num">${formatNumber(row.officialRealized)}</td><td data-label="Real. extra" class="num">${formatNumber(row.unofficialRealized)}</td><td data-label="Realizado escolhido" class="num chosen ${realizedChanged ? 'changed' : ''}">${formatNumber(row.chosenRealized)}<span class="current-value">Atual: ${formatNumber(currentRealized === '' ? null : currentRealized)}</span></td><td data-label="Origem" class="origin">Objetivo: ${objectiveOrigin}<br>Realizado: ${realizedOrigin}</td></tr>`;
       }).join('');
+      renderImportActions();
     }
 
     function clearAll() {
@@ -816,14 +935,52 @@
       downloadFile(`simulacao-flog-${meta.referenceDate || 'sem-data'}.json`, JSON.stringify(payload, null, 2), 'application/json;charset=utf-8');
     }
 
+    function requestImportApplication() {
+      const meta = simulationMeta();
+      const changes = simulationChanges();
+      if (model.requestPending || !model.catalog.writeEnabled || !model.sessionToken || !changes.length) return;
+      model.requestPending = true;
+      setResultStatus('Aguardando confirmação e salvamento pelo sistema…', '');
+      renderImportActions();
+      window.parent.postMessage({
+        type: 'prototype-apply-request',
+        catalogVersion: 2,
+        sessionToken: model.sessionToken,
+        managerId: meta.managerId,
+        referenceDate: meta.referenceDate,
+        results: model.simulation.map(row => ({
+          productId: row.productId,
+          objective: row.chosenObjective,
+          realized: row.chosenRealized
+        }))
+      }, '*');
+    }
+
+    function requestImportUndo() {
+      const history = model.catalog.lastReversibleImport;
+      if (model.requestPending || !model.catalog.writeEnabled || !model.sessionToken || !history) return;
+      model.requestPending = true;
+      setResultStatus('Aguardando confirmação para desfazer a importação…', '');
+      renderImportActions();
+      window.parent.postMessage({
+        type: 'prototype-undo-request',
+        catalogVersion: 2,
+        sessionToken: model.sessionToken,
+        historyId: history.id
+      }, '*');
+    }
+
     dom('simulateBtn').addEventListener('click', runSimulation);
     dom('clearAllBtn').addEventListener('click', clearAll);
     dom('exportCsvBtn').addEventListener('click', exportCsv);
     dom('exportJsonBtn').addEventListener('click', exportJson);
+    dom('applyImportBtn').addEventListener('click', requestImportApplication);
+    dom('undoImportBtn').addEventListener('click', requestImportUndo);
     dom('managerSelect').addEventListener('change', () => { model.simulation = []; renderSimulation(); setResultStatus('', ''); });
     dom('referenceDate').addEventListener('change', () => { model.simulation = []; renderSimulation(); setResultStatus('', ''); });
     renderMappings();
     renderSimulation();
+    renderImportActions();
   </script>
 </body>
 </html>

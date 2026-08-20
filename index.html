@@ -2931,7 +2931,7 @@
     <div class="tabs">
       <button class="tab-btn active" data-tab="commercialPanel">Gestão Comercial</button>
       <button class="tab-btn" data-tab="managerPanel">Área do Gestor</button>
-      <button class="tab-btn" data-tab="prototypePanel">Protótipo</button>
+      <button class="tab-btn" data-tab="prototypePanel">Importar F-LOG</button>
     </div>
   </nav>
 
@@ -3262,7 +3262,7 @@
           id="prototypeFrame"
           class="prototype-frame"
           src="prototipo.html"
-          title="Ambiente isolado do protótipo de importação F-LOG"
+          title="Importação assistida e reversível do F-LOG"
           sandbox="allow-scripts allow-downloads"
           referrerpolicy="no-referrer"
         ></iframe>
@@ -3433,6 +3433,12 @@
     const USER_STORAGE_PREFIX = 'painelGestaoCompleto_usuario_';
     const CLIENT_ID = globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : String(Date.now() + Math.random());
     const makeId = () => (globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : String(Date.now() + Math.random()));
+    const FLOG_IMPORT_WRITE_ENABLED = true;
+    const FLOG_IMPORT_HISTORY_LIMIT = 10;
+    const FLOG_IMPORT_MAX_VALUE = 1_000_000_000_000_000;
+    const FLOG_IMPORT_SAFE_PAYLOAD_BYTES = 900_000;
+    const PROTOTYPE_CATALOG_VERSION = 2;
+    const prototypeSessionToken = makeId();
 
     const products = [
       { label: 'Cartão', ref: 'card', obj: 'cardObj', real: 'cardReal' },
@@ -3488,6 +3494,7 @@
       actionPlans: [],
       commercialTreatments: [],
       commercialFilterPresets: [],
+      commercialImportHistory: [],
       managerArea: { records: {} },
       analysisDate: '2026-08-07',
       commercial: defaultCommercial(),
@@ -3527,6 +3534,7 @@
     let lastSavedJson = '';
     let authMode = 'login';
     let draggedActionId = '';
+    let prototypeImportBusy = false;
     const expandedActionPlans = new Set();
     const commercialUi = {
       view: 'commercialScoreView',
@@ -3621,6 +3629,44 @@
       }));
     }
 
+    function normalizeCommercialImportHistory(value) {
+      if (!Array.isArray(value)) return [];
+      return value.slice(0, FLOG_IMPORT_HISTORY_LIMIT).filter(record => record && record.id && record.managerId).map(record => {
+        const changes = Array.isArray(record.changes) ? record.changes.slice(0, 1000).filter(change => change && change.productId).map(change => ({
+          productId: String(change.productId).slice(0, 250),
+          productName: String(change.productName || '').slice(0, 250),
+          existedBefore: Boolean(change.existedBefore),
+          objectiveChanged: Boolean(change.objectiveChanged),
+          beforeObjective: numberOrBlank(change.beforeObjective),
+          afterObjective: numberOrBlank(change.afterObjective),
+          realizedChanged: Boolean(change.realizedChanged),
+          beforeRealized: numberOrBlank(change.beforeRealized),
+          afterRealized: numberOrBlank(change.afterRealized)
+        })).filter(change => change.objectiveChanged || change.realizedChanged) : [];
+        return {
+          version: 1,
+          id: String(record.id).slice(0, 250),
+          createdAt: String(record.createdAt || '').slice(0, 40),
+          undoneAt: String(record.undoneAt || '').slice(0, 40),
+          referenceDate: String(record.referenceDate || '').slice(0, 10),
+          managerId: String(record.managerId).slice(0, 250),
+          managerName: String(record.managerName || '').slice(0, 250),
+          createdByUid: String(record.createdByUid || '').slice(0, 250),
+          createdByEmail: String(record.createdByEmail || '').slice(0, 320),
+          changes
+        };
+      }).filter(record => record.changes.length);
+    }
+
+    function pruneCommercialImportHistory({ managerId = '', productId = '' } = {}) {
+      const history = Array.isArray(state.commercialImportHistory) ? state.commercialImportHistory : [];
+      state.commercialImportHistory = history
+        .filter(record => !managerId || record.managerId !== managerId)
+        .map(record => productId ? { ...record, changes: record.changes.filter(change => change.productId !== productId) } : record)
+        .filter(record => record.changes.length)
+        .slice(0, FLOG_IMPORT_HISTORY_LIMIT);
+    }
+
     function normalizeState(value) {
       const base = isValidState(value) ? value : defaultState();
       const commercial = normalizeCommercial(base.commercial);
@@ -3669,6 +3715,7 @@
             history: [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date))
           };
         }) : [];
+      const commercialImportHistory = normalizeCommercialImportHistory(base.commercialImportHistory);
       return {
         ...base,
         commercial,
@@ -3679,6 +3726,7 @@
         actionPlans,
         commercialTreatments,
         commercialFilterPresets,
+        commercialImportHistory,
         managerArea: normalizeManagerArea(base.managerArea),
         commercialReferences: normalizeCommercialReferences(base.commercialReferences, base.references, commercial)
       };
@@ -3814,6 +3862,7 @@
       writeLocalCache(user.uid, lastSavedJson);
       renderAll();
       cloudReady = true;
+      sendPrototypeCatalog();
 
       if (!snapshot.exists()) {
         pendingChanges = true;
@@ -3987,10 +4036,13 @@
       const source = state.commercial;
       const data = source && Array.isArray(source.products) && Array.isArray(source.segments) && Array.isArray(source.managers)
         ? source
-        : { products: [], segments: [], managers: [] };
+        : { products: [], segments: [], managers: [], entries: [] };
+      const lastReversibleImport = (Array.isArray(state.commercialImportHistory) ? state.commercialImportHistory : []).find(record => !record.undoneAt) || null;
       return {
         type: 'prototype-catalog',
-        catalogVersion: 1,
+        catalogVersion: PROTOTYPE_CATALOG_VERSION,
+        sessionToken: prototypeSessionToken,
+        writeEnabled: FLOG_IMPORT_WRITE_ENABLED && Boolean(currentUser) && cloudReady,
         products: data.products
           .filter(item => item && item.id && String(item.name || '').trim())
           .map(item => ({ id: String(item.id), name: String(item.name).trim() })),
@@ -3999,7 +4051,23 @@
           .map(item => ({ id: String(item.id), name: String(item.name).trim() })),
         managers: data.managers
           .filter(item => item && item.id && String(item.name || '').trim())
-          .map(item => ({ id: String(item.id), name: String(item.name).trim(), segmentId: String(item.segmentId || '') }))
+          .map(item => ({ id: String(item.id), name: String(item.name).trim(), segmentId: String(item.segmentId || '') })),
+        entries: (Array.isArray(data.entries) ? data.entries : [])
+          .filter(item => item && item.managerId && item.productId)
+          .map(item => ({
+            managerId: String(item.managerId),
+            productId: String(item.productId),
+            objective: numberOrBlank(item.objective),
+            realized: numberOrBlank(item.realized),
+            hidden: Boolean(item.hidden)
+          })),
+        lastReversibleImport: lastReversibleImport ? {
+          id: lastReversibleImport.id,
+          managerName: lastReversibleImport.managerName,
+          referenceDate: lastReversibleImport.referenceDate,
+          createdAt: lastReversibleImport.createdAt,
+          changeCount: lastReversibleImport.changes.length
+        } : null
       };
     }
 
@@ -4008,6 +4076,254 @@
       if (!frame?.contentWindow) return;
       frame.contentWindow.postMessage(prototypeCatalogSnapshot(), '*');
     }
+
+    function sendPrototypeImportResult(ok, message) {
+      const frame = document.getElementById('prototypeFrame');
+      if (!frame?.contentWindow) return;
+      frame.contentWindow.postMessage({
+        type: 'prototype-import-result',
+        catalogVersion: PROTOTYPE_CATALOG_VERSION,
+        sessionToken: prototypeSessionToken,
+        ok: Boolean(ok),
+        message: String(message || '')
+      }, '*');
+    }
+
+    function samePrototypeCommercialValue(first, second) {
+      const a = first === '' || first === null || first === undefined ? '' : Number(first);
+      const b = second === '' || second === null || second === undefined ? '' : Number(second);
+      return a === b;
+    }
+
+    function validatedPrototypeImportValue(value) {
+      if (value === null || value === undefined || value === '') return null;
+      const number = Number(value);
+      if (!Number.isFinite(number) || number < 0 || number > FLOG_IMPORT_MAX_VALUE) {
+        throw new Error('A importação contém um valor inválido ou fora do limite permitido.');
+      }
+      return number;
+    }
+
+    function validatedPrototypeImportRows(payload, data) {
+      if (!Array.isArray(payload.results) || !payload.results.length || payload.results.length > data.products.length) {
+        throw new Error('A simulação recebida está vazia ou possui quantidade inválida de produtos.');
+      }
+      const productIds = new Set(data.products.map(product => product.id));
+      const seen = new Set();
+      return payload.results.map(item => {
+        const productId = String(item?.productId || '');
+        if (!productIds.has(productId) || seen.has(productId)) {
+          throw new Error('A simulação contém produto inexistente ou repetido.');
+        }
+        seen.add(productId);
+        return {
+          productId,
+          objective: validatedPrototypeImportValue(item?.objective),
+          realized: validatedPrototypeImportValue(item?.realized)
+        };
+      });
+    }
+
+    function prototypeImportChanges(managerId, rows) {
+      const data = commercialData();
+      const products = new Map(data.products.map(product => [product.id, product]));
+      return rows.map(row => {
+        const entry = commercialEntry(managerId, row.productId, false);
+        const beforeObjective = entry?.objective ?? '';
+        const beforeRealized = entry?.realized ?? '';
+        const hidden = Boolean(entry?.hidden);
+        const objectiveChanged = !hidden && row.objective !== null && !samePrototypeCommercialValue(beforeObjective, row.objective);
+        const realizedChanged = !hidden && row.realized !== null && !samePrototypeCommercialValue(beforeRealized, row.realized);
+        return {
+          productId: row.productId,
+          productName: products.get(row.productId)?.name || 'Produto',
+          existedBefore: Boolean(entry),
+          objectiveChanged,
+          beforeObjective,
+          afterObjective: objectiveChanged ? row.objective : beforeObjective,
+          realizedChanged,
+          beforeRealized,
+          afterRealized: realizedChanged ? row.realized : beforeRealized
+        };
+      }).filter(change => change.objectiveChanged || change.realizedChanged);
+    }
+
+    function restoreStateAfterPrototypeFailure(raw) {
+      state = normalizeState(JSON.parse(raw));
+      pendingChanges = false;
+      lastSavedJson = raw;
+      if (currentUser) writeLocalCache(currentUser.uid, raw);
+      renderAll();
+      sendPrototypeCatalog();
+    }
+
+    function validatePrototypePayloadSize() {
+      const bytes = new TextEncoder().encode(JSON.stringify(state)).length;
+      if (bytes > FLOG_IMPORT_SAFE_PAYLOAD_BYTES) {
+        throw new Error('A importação deixaria o documento acima do limite seguro de armazenamento. Nenhum dado foi alterado.');
+      }
+    }
+
+    async function preparePrototypeCloudWrite() {
+      if (!FLOG_IMPORT_WRITE_ENABLED || !currentUser || !currentUserDoc || !cloudReady) {
+        throw new Error('A conexão com a conta ainda não está pronta para gravar.');
+      }
+      const saved = await persistState();
+      if (!saved) throw new Error('As alterações pendentes não puderam ser salvas antes da importação.');
+    }
+
+    async function applyPrototypeImport(payload) {
+      let data = commercialData();
+      const managerId = String(payload.managerId || '');
+      let manager = data.managers.find(item => item.id === managerId);
+      if (!manager) throw new Error('O gerente selecionado não existe mais no cadastro.');
+      const referenceDate = String(payload.referenceDate || '');
+      const referenceTime = Date.parse(`${referenceDate}T00:00:00Z`);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(referenceDate) || !Number.isFinite(referenceTime) || new Date(referenceTime).toISOString().slice(0, 10) !== referenceDate) {
+        throw new Error('A data de referência é inválida.');
+      }
+      const rows = validatedPrototypeImportRows(payload, data);
+      let changes = prototypeImportChanges(managerId, rows);
+      if (!changes.length) {
+        sendPrototypeImportResult(true, 'Nenhuma alteração necessária: o F-LOG já possui esses valores.');
+        return;
+      }
+      const fieldCount = changes.reduce((total, change) => total + Number(change.objectiveChanged) + Number(change.realizedChanged), 0);
+      const confirmed = confirm(`Aplicar a importação no F-LOG de ${manager.name}?\n\n${changes.length} produto(s) e ${fieldCount} campo(s) serão atualizados. Os valores anteriores ficarão disponíveis para reversão.`);
+      if (!confirmed) {
+        sendPrototypeImportResult(true, 'Aplicação cancelada. Nenhum dado foi alterado.');
+        return;
+      }
+
+      await preparePrototypeCloudWrite();
+      data = commercialData();
+      manager = data.managers.find(item => item.id === managerId);
+      if (!manager) throw new Error('O gerente selecionado foi removido durante a confirmação.');
+      const currentRows = validatedPrototypeImportRows(payload, data);
+      changes = prototypeImportChanges(managerId, currentRows);
+      if (!changes.length) {
+        sendPrototypeCatalog();
+        sendPrototypeImportResult(true, 'Nenhuma alteração necessária: o F-LOG já possui esses valores.');
+        return;
+      }
+      const beforeRaw = JSON.stringify(state);
+      const record = {
+        version: 1,
+        id: makeId(),
+        createdAt: new Date().toISOString(),
+        undoneAt: '',
+        referenceDate,
+        managerId,
+        managerName: manager.name,
+        createdByUid: currentUser.uid,
+        createdByEmail: currentUser.email || '',
+        changes
+      };
+
+      changes.forEach(change => {
+        const entry = commercialEntry(managerId, change.productId, true);
+        if (change.objectiveChanged) entry.objective = change.afterObjective;
+        if (change.realizedChanged) entry.realized = change.afterRealized;
+      });
+      state.commercialImportHistory = [record, ...(Array.isArray(state.commercialImportHistory) ? state.commercialImportHistory : [])]
+        .slice(0, FLOG_IMPORT_HISTORY_LIMIT);
+      try {
+        validatePrototypePayloadSize();
+      } catch (error) {
+        restoreStateAfterPrototypeFailure(beforeRaw);
+        throw error;
+      }
+      pendingChanges = true;
+      const saved = await persistState(true);
+      if (!saved) {
+        restoreStateAfterPrototypeFailure(beforeRaw);
+        throw new Error('A gravação falhou; o estado anterior foi restaurado neste navegador.');
+      }
+      renderCommercialAll();
+      sendPrototypeCatalog();
+      sendPrototypeImportResult(true, `Importação aplicada a ${changes.length} produto(s) de ${manager.name}. A reversão está disponível.`);
+      toast('Importação aplicada e salva na nuvem.');
+    }
+
+    function prototypeUndoManualChanges(record) {
+      return record.changes.reduce((total, change) => {
+        const entry = commercialEntry(record.managerId, change.productId, false);
+        const objectiveChangedAgain = change.objectiveChanged && !samePrototypeCommercialValue(entry?.objective ?? '', change.afterObjective);
+        const realizedChangedAgain = change.realizedChanged && !samePrototypeCommercialValue(entry?.realized ?? '', change.afterRealized);
+        return total + Number(objectiveChangedAgain) + Number(realizedChangedAgain);
+      }, 0);
+    }
+
+    async function undoPrototypeImport(payload) {
+      const historyId = String(payload.historyId || '');
+      const history = Array.isArray(state.commercialImportHistory) ? state.commercialImportHistory : [];
+      let record = history.find(item => item.id === historyId && !item.undoneAt);
+      if (!record) throw new Error('A importação selecionada não está mais disponível para reversão.');
+      let data = commercialData();
+      if (!data.managers.some(manager => manager.id === record.managerId)) throw new Error('O gerente desta importação não existe mais no cadastro.');
+      const productIds = new Set(data.products.map(product => product.id));
+      if (record.changes.some(change => !productIds.has(change.productId))) throw new Error('Um produto desta importação não existe mais no cadastro.');
+      const manuallyChanged = prototypeUndoManualChanges(record);
+      const warning = manuallyChanged
+        ? `\n\nAtenção: ${manuallyChanged} campo(s) foram modificados depois da importação e também voltarão ao valor anterior.`
+        : '';
+      const confirmed = confirm(`Desfazer a importação de ${record.managerName}?\n\n${record.changes.length} produto(s) voltarão aos valores anteriores.${warning}`);
+      if (!confirmed) {
+        sendPrototypeImportResult(true, 'Reversão cancelada. Nenhum dado foi alterado.');
+        return;
+      }
+
+      await preparePrototypeCloudWrite();
+      record = state.commercialImportHistory.find(item => item.id === historyId && !item.undoneAt);
+      if (!record) throw new Error('A importação já foi desfeita em outra atualização.');
+      data = commercialData();
+      if (!data.managers.some(manager => manager.id === record.managerId)) throw new Error('O gerente desta importação foi removido durante a confirmação.');
+      const currentProductIds = new Set(data.products.map(product => product.id));
+      if (record.changes.some(change => !currentProductIds.has(change.productId))) throw new Error('Um produto desta importação foi removido durante a confirmação.');
+      const beforeRaw = JSON.stringify(state);
+      record.changes.forEach(change => {
+        const entry = commercialEntry(record.managerId, change.productId, true);
+        if (change.objectiveChanged) entry.objective = change.beforeObjective;
+        if (change.realizedChanged) entry.realized = change.beforeRealized;
+        if (!change.existedBefore && entry.objective === '' && entry.realized === '' && !entry.hidden) {
+          data.entries = data.entries.filter(item => item !== entry);
+        }
+      });
+      record.undoneAt = new Date().toISOString();
+      pendingChanges = true;
+      const saved = await persistState(true);
+      if (!saved) {
+        restoreStateAfterPrototypeFailure(beforeRaw);
+        throw new Error('A reversão não pôde ser salva; os valores anteriores à tentativa foram restaurados neste navegador.');
+      }
+      renderCommercialAll();
+      sendPrototypeCatalog();
+      sendPrototypeImportResult(true, `Importação de ${record.managerName} desfeita e salva na nuvem.`);
+      toast('Última importação desfeita.');
+    }
+
+    window.addEventListener('message', async event => {
+      const frame = document.getElementById('prototypeFrame');
+      if (!frame?.contentWindow || event.source !== frame.contentWindow) return;
+      const payload = event.data;
+      if (!payload || payload.catalogVersion !== PROTOTYPE_CATALOG_VERSION || payload.sessionToken !== prototypeSessionToken) return;
+      if (!['prototype-apply-request', 'prototype-undo-request'].includes(payload.type)) return;
+      if (prototypeImportBusy) {
+        sendPrototypeImportResult(false, 'Já existe uma importação ou reversão em andamento.');
+        return;
+      }
+      prototypeImportBusy = true;
+      try {
+        if (payload.type === 'prototype-apply-request') await applyPrototypeImport(payload);
+        else await undoPrototypeImport(payload);
+      } catch (error) {
+        console.error('Falha na importação assistida do F-LOG:', error);
+        sendPrototypeCatalog();
+        sendPrototypeImportResult(false, error?.message || 'Não foi possível concluir a operação.');
+      } finally {
+        prototypeImportBusy = false;
+      }
+    });
 
     function syncScoresWithCommercialManagers() {
       const managers = [...commercialData().managers].sort(byName);
@@ -5833,6 +6149,7 @@
       renderManagers();
       renderReport();
       renderCommercialAll();
+      sendPrototypeCatalog();
     }
 
     function updateCollection(collection, id, field, value) {
@@ -6440,6 +6757,7 @@
         if (!product || !confirm(`Excluir o produto "${product.name}" e todos os seus lançamentos?`)) return;
         data.products = data.products.filter(x => x.id !== id);
         data.entries = data.entries.filter(x => x.productId !== id);
+        pruneCommercialImportHistory({ productId: id });
       } else if (event.target.closest('.delete-commercial-segment')) {
         const segment = data.segments.find(x => x.id === id);
         if (!segment) return;
@@ -6451,6 +6769,7 @@
         if (!manager || !confirm(`Excluir o gerente "${manager.name}" e todos os seus lançamentos?`)) return;
         data.managers = data.managers.filter(x => x.id !== id);
         data.entries = data.entries.filter(x => x.managerId !== id);
+        pruneCommercialImportHistory({ managerId: id });
         if (commercialUi.selectedManagerId === id) commercialUi.selectedManagerId = '';
       } else return;
       syncScoresWithCommercialManagers();
@@ -6542,6 +6861,7 @@
           realized: deleteRealized ? '' : entry.realized
         }));
       }
+      state.commercialImportHistory = [];
 
       Object.values(commercialUi.filters).forEach(set => set.clear());
       commercialUi.expanded.clear();
