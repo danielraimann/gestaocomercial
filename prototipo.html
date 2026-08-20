@@ -126,6 +126,8 @@
     .mapping-table { min-width: 760px; }
     .mapping-table td:first-child { font-weight: 800; }
     .mapping-table select { min-width: 220px; min-height: 38px; padding: 6px 8px; font-size: 12px; }
+    .mapping-table select.mapping-pending { border-color: var(--brand); color: var(--brand-dark); background: var(--brand-soft); box-shadow: inset 4px 0 0 var(--brand); font-weight: 900; }
+    .mapping-table select.mapping-pending:focus { border-color: var(--brand-dark); box-shadow: 0 0 0 3px rgba(181,31,46,.16), inset 4px 0 0 var(--brand); }
     .source-list { color: var(--muted); font-size: 11px; }
     .suggestion { color: var(--blue); font-size: 11px; font-weight: 800; }
     .empty { padding: 30px 16px; text-align: center; color: var(--muted); }
@@ -761,7 +763,7 @@
         const suggestion = suggestedProduct(item.label);
         const selected = model.mappings[item.normalized] || '';
         const options = `<option value="">Selecione…</option><option value="__ignore__">Ignorar esta linha</option>${products.map(product => `<option value="${escapeHtml(product.id)}" ${selected === product.id ? 'selected' : ''}>${escapeHtml(product.name)}</option>`).join('')}`;
-        return `<tr><td data-label="Nome encontrado">${escapeHtml(item.label)}${item.count > 1 ? `<span class="duplicate-warning">${item.count} ocorrências</span>` : ''}</td><td data-label="Origem" class="source-list">${escapeHtml([...item.sources].join(' + '))}</td><td data-label="Sugestão" class="suggestion">${suggestion ? `${escapeHtml(suggestion.product.name)} (${Math.round(suggestion.score * 100)}%)` : 'Sem sugestão segura'}</td><td data-label="Produto correspondente"><select data-mapping-key="${escapeHtml(item.normalized)}" aria-label="Produto correspondente a ${escapeHtml(item.label)}">${options}</select></td></tr>`;
+        return `<tr><td data-label="Nome encontrado">${escapeHtml(item.label)}${item.count > 1 ? `<span class="duplicate-warning">${item.count} ocorrências</span>` : ''}</td><td data-label="Origem" class="source-list">${escapeHtml([...item.sources].join(' + '))}</td><td data-label="Sugestão" class="suggestion">${suggestion ? `${escapeHtml(suggestion.product.name)} (${Math.round(suggestion.score * 100)}%)` : 'Sem sugestão segura'}</td><td data-label="Produto correspondente"><select class="${selected ? '' : 'mapping-pending'}" data-mapping-key="${escapeHtml(item.normalized)}" aria-label="Produto correspondente a ${escapeHtml(item.label)}" ${selected ? '' : 'aria-invalid="true" title="Direcionamento pendente"'}>${options}</select></td></tr>`;
       }).join('');
       dom('mappingBody').querySelectorAll('[data-mapping-key]').forEach(select => {
         select.value = model.mappings[select.dataset.mappingKey] || '';
