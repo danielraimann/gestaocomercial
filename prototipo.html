@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="prototype-version" content="2">
+  <meta name="prototype-version" content="3">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>Importação assistida do F-LOG</title>
   <style>
@@ -123,13 +123,24 @@
 
     .mapping-toolbar, .simulation-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
     .summary-note { color: var(--muted); font-size: 12px; }
-    .mapping-table { min-width: 760px; }
+    .mapping-table { min-width: 900px; }
     .mapping-table td:first-child { font-weight: 800; }
     .mapping-table select { min-width: 220px; min-height: 38px; padding: 6px 8px; font-size: 12px; }
     .mapping-table select.mapping-pending { border-color: var(--brand); color: var(--brand-dark); background: var(--brand-soft); box-shadow: inset 4px 0 0 var(--brand); font-weight: 900; }
     .mapping-table select.mapping-pending:focus { border-color: var(--brand-dark); box-shadow: 0 0 0 3px rgba(181,31,46,.16), inset 4px 0 0 var(--brand); }
     .source-list { color: var(--muted); font-size: 11px; }
     .suggestion { color: var(--blue); font-size: 11px; font-weight: 800; }
+    .mapping-table tr.indicator-hidden { opacity: .62; background: #f4f5f7; }
+    .mapping-table tr.indicator-hidden td:first-child { text-decoration: line-through; }
+    .mapping-actions { display: flex; align-items: center; gap: 6px; }
+    .mapping-action-btn { display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 1px solid var(--line); border-radius: 8px; color: #4e5863; background: #fff; cursor: pointer; }
+    .mapping-action-btn:hover:not(:disabled) { border-color: #929aa5; background: #f6f7f8; }
+    .mapping-action-btn.danger { color: var(--brand-dark); }
+    .mapping-action-btn:disabled { opacity: .45; cursor: not-allowed; }
+    .mapping-action-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .indicator-library-status { min-height: 18px; margin: 9px 0 0; color: var(--muted); font-size: 11px; }
+    .indicator-library-status.error { color: var(--brand-dark); font-weight: 850; }
+    .indicator-library-status.ok { color: var(--safe); font-weight: 850; }
     .empty { padding: 30px 16px; text-align: center; color: var(--muted); }
     .callout { padding: 12px 14px; border: 1px solid #b9dec9; border-radius: 10px; color: #135b39; background: var(--safe-soft); font-size: 12px; line-height: 1.45; }
 
@@ -182,6 +193,7 @@
       .mapping-table td { display: grid; gap: 3px; padding: 0; border: 0; }
       .mapping-table td::before { content: attr(data-label); color: var(--muted); font-size: 9px; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
       .mapping-table select { min-width: 0; }
+      .mapping-actions { justify-content: flex-start; }
       .result-table { min-width: 0; }
       .result-table thead { display: none; }
       .result-table tbody { display: grid; gap: 10px; padding: 8px; }
@@ -201,12 +213,12 @@
         <h1>Importação assistida do F-LOG</h1>
         <p>Cole duas fontes, reconheça a estrutura, relacione as nomenclaturas e confira o resultado antes de aplicá-lo ao F-LOG.</p>
       </div>
-      <div class="memory-pill">Sessão temporária<br>Atualizar a página limpa tudo</div>
+      <div class="memory-pill">Fontes temporárias<br>Indicadores salvos na conta</div>
     </header>
 
     <div class="safety" role="note">
       <div class="safety-icon">!</div>
-      <div><strong>A simulação continua sem alterar o sistema.</strong><span>Os dados colados permanecem somente nesta página. O F-LOG só é atualizado depois de gerar a simulação, revisar as alterações e confirmar a aplicação; cada aplicação pode ser desfeita.</span></div>
+      <div><strong>A simulação continua sem alterar o sistema.</strong><span>Os valores colados permanecem somente nesta página; os nomes dos indicadores e suas correspondências ficam salvos na conta. O F-LOG só é atualizado depois da confirmação, e cada aplicação pode ser desfeita.</span></div>
     </div>
 
     <section class="card" aria-labelledby="contextTitle">
@@ -283,11 +295,12 @@
         <div class="mapping-toolbar"><div class="summary-note" id="mappingSummary">Leia pelo menos uma fonte para montar as correspondências.</div><div class="summary-note">Realizados negativos são mantidos como estornos.</div></div>
         <div class="table-scroll">
           <table class="mapping-table">
-            <thead><tr><th>Nome encontrado</th><th>Origem</th><th>Sugestão</th><th>Produto correspondente</th></tr></thead>
-            <tbody id="mappingBody"><tr><td colspan="4" class="empty">Nenhum indicador disponível.</td></tr></tbody>
+            <thead><tr><th>Nome encontrado</th><th>Origem</th><th>Sugestão</th><th>Produto correspondente</th><th>Ações</th></tr></thead>
+            <tbody id="mappingBody"><tr><td colspan="5" class="empty">Nenhum indicador disponível.</td></tr></tbody>
           </table>
         </div>
-        <div class="callout" style="margin-top:12px">As correspondências valem somente enquanto esta página estiver aberta. Linhas repetidas dentro de uma fonte são protegidas contra soma dupla: o protótipo conserva o maior valor encontrado.</div>
+        <p class="indicator-library-status" id="indicatorLibraryStatus" aria-live="polite"></p>
+        <div class="callout" style="margin-top:12px">Os indicadores e as correspondências ficam salvos e só são removidos pela lixeira. O olho permite ocultar ou voltar a usar uma linha. Linhas repetidas dentro de uma fonte são protegidas contra soma dupla: o sistema conserva o maior valor encontrado.</div>
       </div>
     </section>
 
@@ -297,7 +310,7 @@
       </div>
       <div class="card-body">
         <div class="simulation-toolbar">
-          <div class="button-row" style="margin:0"><button type="button" class="btn safe" id="simulateBtn">Gerar simulação</button><button type="button" class="btn ghost" id="clearAllBtn">Limpar tudo</button></div>
+          <div class="button-row" style="margin:0"><button type="button" class="btn safe" id="simulateBtn">Gerar simulação</button><button type="button" class="btn ghost" id="clearAllBtn">Limpar dados colados</button></div>
           <div class="button-row" style="margin:0"><button type="button" class="btn dark" id="exportCsvBtn" disabled>Exportar CSV</button><button type="button" class="btn dark" id="exportJsonBtn" disabled>Exportar JSON</button></div>
         </div>
         <div class="kpis" id="simulationKpis">
@@ -541,12 +554,15 @@
     }
 
     const model = {
-      catalog: { products: [], managers: [], segments: [], entries: [], writeEnabled: false, lastReversibleImport: null },
+      catalog: { products: [], managers: [], segments: [], entries: [], importIndicators: [], writeEnabled: false, lastReversibleImport: null },
       sources: { official: emptySource(), unofficial: emptySource() },
       mappings: Object.create(null),
       simulation: [],
       sessionToken: '',
-      requestPending: false
+      requestPending: false,
+      indicatorRequestPending: false,
+      indicatorSyncTimer: null,
+      deletedIndicatorKeys: new Set()
     };
 
     function localIsoDate() {
@@ -593,6 +609,26 @@
       };
     }
 
+    function sanitizeCatalogIndicators(items, products) {
+      if (!Array.isArray(items)) return [];
+      const productIds = new Set(products.map(product => product.id));
+      const seen = new Set();
+      return items.slice(0, 1000).map(item => {
+        const label = String(item?.label || '').trim().slice(0, 250);
+        const key = normalizeLabel(item?.key || label).slice(0, 250);
+        let mappingProductId = String(item?.mappingProductId || '').slice(0, 250);
+        if (mappingProductId !== '__ignore__' && !productIds.has(mappingProductId)) mappingProductId = '';
+        return { key, label, mappingProductId, hidden: Boolean(item?.hidden) };
+      }).filter(item => item.key && item.label && !seen.has(item.key) && seen.add(item.key));
+    }
+
+    function hydratePersistedMappings() {
+      model.mappings = Object.create(null);
+      model.catalog.importIndicators.forEach(item => {
+        if (item.mappingProductId) model.mappings[item.key] = item.mappingProductId;
+      });
+    }
+
     function renderCatalog() {
       const current = dom('managerSelect').value;
       const segmentNames = new Map(model.catalog.segments.map(segment => [segment.id, segment.name]));
@@ -612,27 +648,42 @@
     window.addEventListener('message', event => {
       if (event.source !== window.parent) return;
       const payload = event.data;
-      if (!payload || payload.type !== 'prototype-catalog' || payload.catalogVersion !== 2) return;
+      if (!payload || payload.type !== 'prototype-catalog' || payload.catalogVersion !== 3) return;
       model.sessionToken = String(payload.sessionToken || '').slice(0, 250);
+      const products = sanitizeCatalogItems(payload.products, ['id', 'name']);
       model.catalog = {
-        products: sanitizeCatalogItems(payload.products, ['id', 'name']),
+        products,
         managers: sanitizeCatalogItems(payload.managers, ['id', 'name', 'segmentId']),
         segments: sanitizeCatalogItems(payload.segments, ['id', 'name']),
         entries: sanitizeCatalogEntries(payload.entries),
+        importIndicators: sanitizeCatalogIndicators(payload.importIndicators, products),
         writeEnabled: payload.writeEnabled === true,
         lastReversibleImport: sanitizeLastImport(payload.lastReversibleImport)
       };
+      hydratePersistedMappings();
       renderCatalog();
     });
 
     window.addEventListener('message', event => {
       if (event.source !== window.parent) return;
       const payload = event.data;
-      if (!payload || payload.type !== 'prototype-import-result' || payload.catalogVersion !== 2) return;
+      if (!payload || payload.type !== 'prototype-import-result' || payload.catalogVersion !== 3) return;
       if (!model.sessionToken || payload.sessionToken !== model.sessionToken) return;
       model.requestPending = false;
       setResultStatus(String(payload.message || ''), payload.ok ? 'ok' : 'error');
       renderImportActions();
+    });
+
+    window.addEventListener('message', event => {
+      if (event.source !== window.parent) return;
+      const payload = event.data;
+      if (!payload || payload.type !== 'prototype-indicator-result' || payload.catalogVersion !== 3) return;
+      if (!model.sessionToken || payload.sessionToken !== model.sessionToken) return;
+      model.indicatorRequestPending = false;
+      setIndicatorLibraryStatus(String(payload.message || ''), payload.ok ? 'ok' : 'error');
+      renderMappings();
+      renderSimulation();
+      if (payload.ok) scheduleIndicatorUpsert();
     });
 
     function selectOptions(source, allowNone) {
@@ -668,6 +719,7 @@
       model.simulation = [];
       renderMappings();
       renderSimulation();
+      scheduleIndicatorUpsert();
     }
 
     function renderSourceConfig(key) {
@@ -694,6 +746,7 @@
         return;
       }
       const layout = detectLayout(matrix);
+      model.deletedIndicatorKeys.clear();
       model.sources[key] = { matrix, headerRow: layout.headerRow, indicatorCol: layout.indicatorCol, objectiveCol: layout.objectiveCol, realizedCol: layout.realizedCol, rows: [] };
       renderSourceConfig(key);
     }
@@ -728,15 +781,63 @@
 
     function mappingItems() {
       const items = new Map();
+      model.catalog.importIndicators.forEach(indicator => {
+        items.set(indicator.key, { normalized: indicator.key, label: indicator.label, sources: new Set(), count: 0, persisted: true, hidden: indicator.hidden, hasCurrentSource: false });
+      });
       Object.entries(model.sources).forEach(([key, source]) => source.rows.forEach(row => {
         const normalized = normalizeLabel(row.label);
-        if (!normalized) return;
-        const item = items.get(normalized) || { normalized, label: row.label, sources: new Set(), count: 0 };
+        if (!normalized || (model.deletedIndicatorKeys.has(normalized) && !items.has(normalized))) return;
+        const item = items.get(normalized) || { normalized, label: row.label, sources: new Set(), count: 0, persisted: false, hidden: false, hasCurrentSource: false };
         item.sources.add(sourceNames[key]);
         item.count += 1;
+        item.hasCurrentSource = true;
         items.set(normalized, item);
       }));
-      return [...items.values()].sort((a, b) => a.label.localeCompare(b.label, 'pt-BR', { sensitivity: 'base' }));
+      return [...items.values()].sort((a, b) => Number(a.hidden) - Number(b.hidden) || a.label.localeCompare(b.label, 'pt-BR', { sensitivity: 'base' }));
+    }
+
+    function activeSourceMappingItems() {
+      return mappingItems().filter(item => item.hasCurrentSource && !item.hidden);
+    }
+
+    function setIndicatorLibraryStatus(message, type) {
+      dom('indicatorLibraryStatus').textContent = message;
+      dom('indicatorLibraryStatus').className = `indicator-library-status ${type || ''}`.trim();
+    }
+
+    function postIndicatorRequest(type, details) {
+      if (model.indicatorRequestPending || !model.catalog.writeEnabled || !model.sessionToken) return false;
+      model.indicatorRequestPending = true;
+      setIndicatorLibraryStatus('Salvando indicadores na conta…', '');
+      window.parent.postMessage({ type, catalogVersion: 3, sessionToken: model.sessionToken, ...details }, '*');
+      renderMappings();
+      return true;
+    }
+
+    function requestIndicatorUpsert() {
+      if (model.indicatorRequestPending) return;
+      const indicators = mappingItems().filter(item => item.hasCurrentSource && !item.persisted).map(item => ({ label: item.label }));
+      if (!indicators.length) return;
+      if (!model.catalog.writeEnabled || !model.sessionToken) {
+        setIndicatorLibraryStatus('Entre no sistema para salvar os novos indicadores.', 'error');
+        return;
+      }
+      postIndicatorRequest('prototype-indicator-upsert-request', { indicators });
+    }
+
+    function scheduleIndicatorUpsert() {
+      clearTimeout(model.indicatorSyncTimer);
+      model.indicatorSyncTimer = setTimeout(requestIndicatorUpsert, 150);
+    }
+
+    function eyeIcon(hidden) {
+      return hidden
+        ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 10.7a2 2 0 002.7 2.7M9.9 4.2A10.8 10.8 0 0112 4c5.5 0 9 5.5 9 5.5a15.4 15.4 0 01-2.1 2.6M6.5 6.5C4.3 8 3 9.5 3 9.5S6.5 15 12 15c1 0 1.9-.2 2.7-.5"/></svg>'
+        : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12s3.5-5.5 9-5.5S21 12 21 12s-3.5 5.5-9 5.5S3 12 3 12z"/><circle cx="12" cy="12" r="2.5"/></svg>';
+    }
+
+    function trashIcon() {
+      return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>';
     }
 
     function suggestedProduct(label) {
@@ -754,16 +855,18 @@
       });
       const mapped = items.filter(item => model.mappings[item.normalized] && model.mappings[item.normalized] !== '__ignore__').length;
       const ignored = items.filter(item => model.mappings[item.normalized] === '__ignore__').length;
-      dom('mappingSummary').textContent = items.length ? `${mapped} de ${items.length} nomenclatura(s) mapeada(s) · ${ignored} ignorada(s).` : 'Leia pelo menos uma fonte para montar as correspondências.';
+      const hidden = items.filter(item => item.hidden).length;
+      dom('mappingSummary').textContent = items.length ? `${mapped} de ${items.length} nomenclatura(s) mapeada(s) · ${ignored} ignorada(s) · ${hidden} oculta(s).` : 'Leia pelo menos uma fonte para montar as correspondências.';
       if (!items.length) {
-        dom('mappingBody').innerHTML = '<tr><td colspan="4" class="empty">Nenhum indicador disponível.</td></tr>';
+        dom('mappingBody').innerHTML = '<tr><td colspan="5" class="empty">Nenhum indicador disponível.</td></tr>';
         return;
       }
       dom('mappingBody').innerHTML = items.map(item => {
         const suggestion = suggestedProduct(item.label);
         const selected = model.mappings[item.normalized] || '';
         const options = `<option value="">Selecione…</option><option value="__ignore__">Ignorar esta linha</option>${products.map(product => `<option value="${escapeHtml(product.id)}" ${selected === product.id ? 'selected' : ''}>${escapeHtml(product.name)}</option>`).join('')}`;
-        return `<tr><td data-label="Nome encontrado">${escapeHtml(item.label)}${item.count > 1 ? `<span class="duplicate-warning">${item.count} ocorrências</span>` : ''}</td><td data-label="Origem" class="source-list">${escapeHtml([...item.sources].join(' + '))}</td><td data-label="Sugestão" class="suggestion">${suggestion ? `${escapeHtml(suggestion.product.name)} (${Math.round(suggestion.score * 100)}%)` : 'Sem sugestão segura'}</td><td data-label="Produto correspondente"><select class="${selected ? '' : 'mapping-pending'}" data-mapping-key="${escapeHtml(item.normalized)}" aria-label="Produto correspondente a ${escapeHtml(item.label)}" ${selected ? '' : 'aria-invalid="true" title="Direcionamento pendente"'}>${options}</select></td></tr>`;
+        const controlsDisabled = model.indicatorRequestPending || !model.catalog.writeEnabled || !item.persisted;
+        return `<tr class="${item.hidden ? 'indicator-hidden' : ''}"><td data-label="Nome encontrado">${escapeHtml(item.label)}${item.count > 1 ? `<span class="duplicate-warning">${item.count} ocorrências</span>` : ''}</td><td data-label="Origem" class="source-list">${escapeHtml(item.sources.size ? [...item.sources].join(' + ') : 'Salvo')}</td><td data-label="Sugestão" class="suggestion">${suggestion ? `${escapeHtml(suggestion.product.name)} (${Math.round(suggestion.score * 100)}%)` : 'Sem sugestão segura'}</td><td data-label="Produto correspondente"><select class="${selected ? '' : 'mapping-pending'}" data-mapping-key="${escapeHtml(item.normalized)}" aria-label="Produto correspondente a ${escapeHtml(item.label)}" ${controlsDisabled ? 'disabled' : ''} ${selected ? '' : 'aria-invalid="true" title="Direcionamento pendente"'}>${options}</select></td><td data-label="Ações"><div class="mapping-actions"><button type="button" class="mapping-action-btn" data-toggle-indicator="${escapeHtml(item.normalized)}" data-hidden="${item.hidden}" aria-label="${item.hidden ? 'Visualizar' : 'Ocultar'} ${escapeHtml(item.label)}" title="${item.hidden ? 'Visualizar indicador' : 'Ocultar indicador'}" ${controlsDisabled ? 'disabled' : ''}>${eyeIcon(item.hidden)}</button><button type="button" class="mapping-action-btn danger" data-delete-indicator="${escapeHtml(item.normalized)}" data-label="${escapeHtml(item.label)}" aria-label="Excluir ${escapeHtml(item.label)}" title="Excluir indicador" ${controlsDisabled ? 'disabled' : ''}>${trashIcon()}</button></div></td></tr>`;
       }).join('');
       dom('mappingBody').querySelectorAll('[data-mapping-key]').forEach(select => {
         select.value = model.mappings[select.dataset.mappingKey] || '';
@@ -772,10 +875,19 @@
           if (event.target.value) model.mappings[key] = event.target.value;
           else delete model.mappings[key];
           model.simulation = [];
+          postIndicatorRequest('prototype-indicator-mapping-request', { key, mappingProductId: event.target.value });
           renderMappings();
           renderSimulation();
         });
       });
+      dom('mappingBody').querySelectorAll('[data-toggle-indicator]').forEach(button => button.addEventListener('click', () => {
+        postIndicatorRequest('prototype-indicator-visibility-request', { key: button.dataset.toggleIndicator, hidden: button.dataset.hidden !== 'true' });
+      }));
+      dom('mappingBody').querySelectorAll('[data-delete-indicator]').forEach(button => button.addEventListener('click', () => {
+        if (!window.confirm(`Excluir o indicador “${button.dataset.label}”? Ele só voltará à lista se for importado novamente.`)) return;
+        model.deletedIndicatorKeys.add(button.dataset.deleteIndicator);
+        postIndicatorRequest('prototype-indicator-delete-request', { key: button.dataset.deleteIndicator });
+      }));
     }
 
     function valueOrigin(official, unofficial) {
@@ -839,13 +951,15 @@
 
     function runSimulation() {
       const meta = simulationMeta();
-      const items = mappingItems();
+      const items = activeSourceMappingItems();
       const unresolved = items.filter(item => !model.mappings[item.normalized]);
       if (!meta.managerId) return setResultStatus('Selecione o gerente de destino.', 'error');
       if (!dom('referenceDate').value) return setResultStatus('Informe a data de referência.', 'error');
       if (!items.length) return setResultStatus('Leia ao menos uma fonte com indicadores reconhecidos.', 'error');
       if (unresolved.length) return setResultStatus(`Resolva ou ignore ${unresolved.length} nomenclatura(s) antes de simular.`, 'error');
-      model.simulation = reconcileRows(model.sources.official.rows, model.sources.unofficial.rows, model.mappings, model.catalog.products);
+      const activeMappings = { ...model.mappings };
+      mappingItems().filter(item => item.hidden).forEach(item => { activeMappings[item.normalized] = '__ignore__'; });
+      model.simulation = reconcileRows(model.sources.official.rows, model.sources.unofficial.rows, activeMappings, model.catalog.products);
       renderSimulation();
       setResultStatus(`${model.simulation.length} produto(s) conciliado(s) para ${meta.managerName}. Revise os valores atuais e novos antes de aplicar.`, 'ok');
     }
@@ -856,7 +970,7 @@
     }
 
     function renderSimulation() {
-      const items = mappingItems();
+      const items = activeSourceMappingItems();
       const mapped = items.filter(item => model.mappings[item.normalized] && model.mappings[item.normalized] !== '__ignore__').length;
       const lineCount = model.sources.official.rows.length + model.sources.unofficial.rows.length;
       const divergences = model.simulation.filter(row =>
@@ -894,11 +1008,10 @@
     function clearAll() {
       clearSource('official');
       clearSource('unofficial');
-      model.mappings = Object.create(null);
       model.simulation = [];
       dom('managerSelect').value = '';
       dom('referenceDate').value = localIsoDate();
-      setResultStatus('Dados temporários removidos.', 'ok');
+      setResultStatus('Dados colados removidos. Os indicadores e as correspondências salvos foram preservados.', 'ok');
       renderMappings();
       renderSimulation();
     }
@@ -946,7 +1059,7 @@
       renderImportActions();
       window.parent.postMessage({
         type: 'prototype-apply-request',
-        catalogVersion: 2,
+        catalogVersion: 3,
         sessionToken: model.sessionToken,
         managerId: meta.managerId,
         referenceDate: meta.referenceDate,
@@ -966,7 +1079,7 @@
       renderImportActions();
       window.parent.postMessage({
         type: 'prototype-undo-request',
-        catalogVersion: 2,
+        catalogVersion: 3,
         sessionToken: model.sessionToken,
         historyId: history.id
       }, '*');

@@ -3435,9 +3435,10 @@
     const makeId = () => (globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : String(Date.now() + Math.random()));
     const FLOG_IMPORT_WRITE_ENABLED = true;
     const FLOG_IMPORT_HISTORY_LIMIT = 10;
+    const FLOG_IMPORT_INDICATOR_LIMIT = 1000;
     const FLOG_IMPORT_MAX_VALUE = 1_000_000_000_000_000;
     const FLOG_IMPORT_SAFE_PAYLOAD_BYTES = 900_000;
-    const PROTOTYPE_CATALOG_VERSION = 2;
+    const PROTOTYPE_CATALOG_VERSION = 3;
     const prototypeSessionToken = makeId();
 
     const products = [
@@ -3495,6 +3496,7 @@
       commercialTreatments: [],
       commercialFilterPresets: [],
       commercialImportHistory: [],
+      commercialImportIndicators: [],
       managerArea: { records: {} },
       analysisDate: '2026-08-07',
       commercial: defaultCommercial(),
@@ -3658,6 +3660,47 @@
       }).filter(record => record.changes.length);
     }
 
+    function normalizePrototypeIndicatorLabel(value) {
+      return String(value == null ? '' : value)
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLocaleLowerCase('pt-BR')
+        .replace(/[•·▪►▶→↳]/g, ' ')
+        .replace(/[^a-z0-9%]+/g, ' ')
+        .trim()
+        .replace(/\s+/g, ' ')
+        .replace(/\b(vl|qt|qtd|valor|quantidade)\b/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 250);
+    }
+
+    function normalizeCommercialImportIndicators(value, commercial) {
+      if (!Array.isArray(value)) return [];
+      const productIds = new Set(commercial.products.map(product => product.id));
+      const seen = new Set();
+      const indicators = [];
+      for (const item of value) {
+        if (!item || indicators.length >= FLOG_IMPORT_INDICATOR_LIMIT) break;
+        const label = String(item.label || '').trim().slice(0, 250);
+        const key = normalizePrototypeIndicatorLabel(label);
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        const requestedMapping = String(item.mappingProductId || '');
+        const mappingProductId = requestedMapping === '__ignore__' || productIds.has(requestedMapping) ? requestedMapping : '';
+        indicators.push({
+          id: key,
+          key,
+          label,
+          mappingProductId,
+          hidden: Boolean(item.hidden),
+          createdAt: String(item.createdAt || '').slice(0, 40),
+          updatedAt: String(item.updatedAt || '').slice(0, 40)
+        });
+      }
+      return indicators;
+    }
+
     function pruneCommercialImportHistory({ managerId = '', productId = '' } = {}) {
       const history = Array.isArray(state.commercialImportHistory) ? state.commercialImportHistory : [];
       state.commercialImportHistory = history
@@ -3665,6 +3708,17 @@
         .map(record => productId ? { ...record, changes: record.changes.filter(change => change.productId !== productId) } : record)
         .filter(record => record.changes.length)
         .slice(0, FLOG_IMPORT_HISTORY_LIMIT);
+    }
+
+    function clearCommercialImportIndicatorMappings(productId = '') {
+      const indicators = Array.isArray(state.commercialImportIndicators) ? state.commercialImportIndicators : [];
+      const now = new Date().toISOString();
+      indicators.forEach(indicator => {
+        if (indicator.mappingProductId && indicator.mappingProductId !== '__ignore__' && (!productId || indicator.mappingProductId === productId)) {
+          indicator.mappingProductId = '';
+          indicator.updatedAt = now;
+        }
+      });
     }
 
     function normalizeState(value) {
@@ -3716,6 +3770,7 @@
           };
         }) : [];
       const commercialImportHistory = normalizeCommercialImportHistory(base.commercialImportHistory);
+      const commercialImportIndicators = normalizeCommercialImportIndicators(base.commercialImportIndicators, commercial);
       return {
         ...base,
         commercial,
@@ -3727,6 +3782,7 @@
         commercialTreatments,
         commercialFilterPresets,
         commercialImportHistory,
+        commercialImportIndicators,
         managerArea: normalizeManagerArea(base.managerArea),
         commercialReferences: normalizeCommercialReferences(base.commercialReferences, base.references, commercial)
       };
@@ -4061,6 +4117,15 @@
             realized: numberOrBlank(item.realized),
             hidden: Boolean(item.hidden)
           })),
+        importIndicators: (Array.isArray(state.commercialImportIndicators) ? state.commercialImportIndicators : []).map(item => ({
+          id: String(item.id || item.key || ''),
+          key: String(item.key || ''),
+          label: String(item.label || ''),
+          mappingProductId: String(item.mappingProductId || ''),
+          hidden: Boolean(item.hidden),
+          createdAt: String(item.createdAt || ''),
+          updatedAt: String(item.updatedAt || '')
+        })),
         lastReversibleImport: lastReversibleImport ? {
           id: lastReversibleImport.id,
           managerName: lastReversibleImport.managerName,
@@ -4087,6 +4152,128 @@
         ok: Boolean(ok),
         message: String(message || '')
       }, '*');
+    }
+
+    function sendPrototypeIndicatorResult(ok, message) {
+      const frame = document.getElementById('prototypeFrame');
+      if (!frame?.contentWindow) return;
+      frame.contentWindow.postMessage({
+        type: 'prototype-indicator-result',
+        catalogVersion: PROTOTYPE_CATALOG_VERSION,
+        sessionToken: prototypeSessionToken,
+        ok: Boolean(ok),
+        message: String(message || '')
+      }, '*');
+    }
+
+    function validatedPrototypeIndicatorCandidates(payload) {
+      if (!Array.isArray(payload.indicators) || !payload.indicators.length || payload.indicators.length > FLOG_IMPORT_INDICATOR_LIMIT) {
+        throw new Error('A lista de indicadores recebida está vazia ou excede o limite permitido.');
+      }
+      const seen = new Set();
+      return payload.indicators.map(item => {
+        const label = String(item?.label || '').trim().slice(0, 250);
+        const key = normalizePrototypeIndicatorLabel(label);
+        if (!key || seen.has(key)) return null;
+        seen.add(key);
+        return { key, label };
+      }).filter(Boolean);
+    }
+
+    async function persistPrototypeIndicatorMutation(mutator, successMessage) {
+      await preparePrototypeCloudWrite();
+      const beforeRaw = JSON.stringify(state);
+      const changed = mutator();
+      if (!changed) {
+        sendPrototypeCatalog();
+        sendPrototypeIndicatorResult(true, successMessage);
+        return;
+      }
+      try {
+        validatePrototypePayloadSize();
+      } catch (error) {
+        restoreStateAfterPrototypeFailure(beforeRaw);
+        throw error;
+      }
+      pendingChanges = true;
+      const saved = await persistState();
+      if (!saved) {
+        restoreStateAfterPrototypeFailure(beforeRaw);
+        throw new Error('A biblioteca de indicadores não pôde ser salva; o estado anterior foi restaurado neste navegador.');
+      }
+      sendPrototypeCatalog();
+      sendPrototypeIndicatorResult(true, successMessage);
+    }
+
+    async function upsertPrototypeIndicators(payload) {
+      const candidates = validatedPrototypeIndicatorCandidates(payload);
+      const current = Array.isArray(state.commercialImportIndicators) ? state.commercialImportIndicators : [];
+      const existingKeys = new Set(current.map(item => item.key));
+      const additions = candidates.filter(item => !existingKeys.has(item.key));
+      if (current.length + additions.length > FLOG_IMPORT_INDICATOR_LIMIT) {
+        throw new Error(`A biblioteca comporta no máximo ${FLOG_IMPORT_INDICATOR_LIMIT} indicadores.`);
+      }
+      const now = new Date().toISOString();
+      const products = commercialData().products;
+      await persistPrototypeIndicatorMutation(() => {
+        if (!additions.length) return false;
+        const records = additions.map(item => {
+          const exact = products.find(product => normalizePrototypeIndicatorLabel(product.name) === item.key);
+          return {
+            id: item.key,
+            key: item.key,
+            label: item.label,
+            mappingProductId: exact?.id || '',
+            hidden: false,
+            createdAt: now,
+            updatedAt: now
+          };
+        });
+        state.commercialImportIndicators = [...current, ...records];
+        return true;
+      }, additions.length ? `${additions.length} novo(s) indicador(es) salvo(s) na conta.` : 'Nenhum indicador novo: os itens já estavam salvos.');
+    }
+
+    async function updatePrototypeIndicatorMapping(payload) {
+      const key = normalizePrototypeIndicatorLabel(payload.key);
+      const mappingProductId = String(payload.mappingProductId || '');
+      const productIds = new Set(commercialData().products.map(product => product.id));
+      if (!key || (mappingProductId !== '' && mappingProductId !== '__ignore__' && !productIds.has(mappingProductId))) {
+        throw new Error('O direcionamento recebido é inválido.');
+      }
+      await persistPrototypeIndicatorMutation(() => {
+        const item = state.commercialImportIndicators.find(indicator => indicator.key === key);
+        if (!item) throw new Error('O indicador não está mais disponível.');
+        if (item.mappingProductId === mappingProductId) return false;
+        item.mappingProductId = mappingProductId;
+        item.updatedAt = new Date().toISOString();
+        return true;
+      }, 'Direcionamento do indicador salvo na conta.');
+    }
+
+    async function updatePrototypeIndicatorVisibility(payload) {
+      const key = normalizePrototypeIndicatorLabel(payload.key);
+      const hidden = payload.hidden === true;
+      if (!key) throw new Error('O indicador recebido é inválido.');
+      await persistPrototypeIndicatorMutation(() => {
+        const item = state.commercialImportIndicators.find(indicator => indicator.key === key);
+        if (!item) throw new Error('O indicador não está mais disponível.');
+        if (item.hidden === hidden) return false;
+        item.hidden = hidden;
+        item.updatedAt = new Date().toISOString();
+        return true;
+      }, hidden ? 'Indicador ocultado e preservado na conta.' : 'Indicador restaurado na lista ativa.');
+    }
+
+    async function deletePrototypeIndicator(payload) {
+      const key = normalizePrototypeIndicatorLabel(payload.key);
+      if (!key) throw new Error('O indicador recebido é inválido.');
+      await persistPrototypeIndicatorMutation(() => {
+        const before = state.commercialImportIndicators.length;
+        state.commercialImportIndicators = state.commercialImportIndicators.filter(indicator => indicator.key !== key);
+        if (state.commercialImportIndicators.length === before) throw new Error('O indicador já foi excluído.');
+        return true;
+      }, 'Indicador excluído permanentemente da biblioteca.');
     }
 
     function samePrototypeCommercialValue(first, second) {
@@ -4308,19 +4495,33 @@
       if (!frame?.contentWindow || event.source !== frame.contentWindow) return;
       const payload = event.data;
       if (!payload || payload.catalogVersion !== PROTOTYPE_CATALOG_VERSION || payload.sessionToken !== prototypeSessionToken) return;
-      if (!['prototype-apply-request', 'prototype-undo-request'].includes(payload.type)) return;
+      const allowedTypes = [
+        'prototype-apply-request',
+        'prototype-undo-request',
+        'prototype-indicator-upsert-request',
+        'prototype-indicator-mapping-request',
+        'prototype-indicator-visibility-request',
+        'prototype-indicator-delete-request'
+      ];
+      if (!allowedTypes.includes(payload.type)) return;
       if (prototypeImportBusy) {
-        sendPrototypeImportResult(false, 'Já existe uma importação ou reversão em andamento.');
+        if (payload.type.startsWith('prototype-indicator-')) sendPrototypeIndicatorResult(false, 'Já existe outra operação em andamento. Aguarde e tente novamente.');
+        else sendPrototypeImportResult(false, 'Já existe uma importação ou reversão em andamento.');
         return;
       }
       prototypeImportBusy = true;
       try {
         if (payload.type === 'prototype-apply-request') await applyPrototypeImport(payload);
-        else await undoPrototypeImport(payload);
+        else if (payload.type === 'prototype-undo-request') await undoPrototypeImport(payload);
+        else if (payload.type === 'prototype-indicator-upsert-request') await upsertPrototypeIndicators(payload);
+        else if (payload.type === 'prototype-indicator-mapping-request') await updatePrototypeIndicatorMapping(payload);
+        else if (payload.type === 'prototype-indicator-visibility-request') await updatePrototypeIndicatorVisibility(payload);
+        else await deletePrototypeIndicator(payload);
       } catch (error) {
         console.error('Falha na importação assistida do F-LOG:', error);
         sendPrototypeCatalog();
-        sendPrototypeImportResult(false, error?.message || 'Não foi possível concluir a operação.');
+        if (payload.type.startsWith('prototype-indicator-')) sendPrototypeIndicatorResult(false, error?.message || 'Não foi possível atualizar a biblioteca de indicadores.');
+        else sendPrototypeImportResult(false, error?.message || 'Não foi possível concluir a operação.');
       } finally {
         prototypeImportBusy = false;
       }
@@ -6759,6 +6960,7 @@
         data.products = data.products.filter(x => x.id !== id);
         data.entries = data.entries.filter(x => x.productId !== id);
         pruneCommercialImportHistory({ productId: id });
+        clearCommercialImportIndicatorMappings(id);
       } else if (event.target.closest('.delete-commercial-segment')) {
         const segment = data.segments.find(x => x.id === id);
         if (!segment) return;
@@ -6845,7 +7047,10 @@
       if (!deleteProducts && !deleteManagers && !deleteObjectives && !deleteRealized) return;
 
       const data = commercialData();
-      if (deleteProducts) data.products = [];
+      if (deleteProducts) {
+        data.products = [];
+        clearCommercialImportIndicatorMappings();
+      }
       if (deleteManagers) {
         data.managers = [];
         state.managers = [];
